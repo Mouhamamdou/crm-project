@@ -1,7 +1,8 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, create_engine, ForeignKey
+from sqlalchemy import Column, Integer, String, create_engine, ForeignKey, DateTime, Boolean
 from datetime import datetime
 from sqlalchemy.orm import relationship
+import datetime
 
 Base = declarative_base()
 
@@ -12,8 +13,8 @@ class Client(Base):
     email = Column(String)
     telephone = Column(String)
     company_name = Column(String)
-    creation_date = Column(datetime)
-    last_update = Column(datetime)
+    creation_date = Column(DateTime, default=datetime.datetime.utcnow)
+    last_update = Column(DateTime)
     commercial = Column(String)
 
     contracts = relationship('Contract', backref='client')
@@ -26,12 +27,12 @@ class Client(Base):
 class Contract(Base):
     __tablename__ = 'contracts'
     id = Column(Integer, primary_key=True)
-    client = Column(String, ForeignKey('clients.name'))
+    client_id = Column(Integer, ForeignKey('clients.id'))
     commercial = Column(String)
     total_amount = Column(String)
     amount_due = Column(String)
-    creation_date = Column(datetime)
-    status = Column(bool)
+    creation_date = Column(DateTime, default=datetime.datetime.utcnow)
+    status = Column(Boolean)
 
     client = relationship('Client', backref='contracts')
     events = relationship('Event', backref='contract')
@@ -44,10 +45,9 @@ class Event(Base):
     __tablename__ = 'events'
     id = Column(Integer, primary_key=True)
     Contract_id = Column(Integer, ForeignKey('contracts.id'))
-    client_name = Column(String, ForeignKey('clients.name'))
-    client_contact = Column(String, ForeignKey('clients.email'))
-    start_date = Column(datetime)
-    end_date = Column(datetime)
+    client_id = Column(Integer, ForeignKey('clients.id'))
+    start_date = Column(DateTime)
+    end_date = Column(DateTime)
     support_contact = Column(String)
     location = Column(String)
     attendees = Column(Integer)
@@ -60,5 +60,5 @@ class Event(Base):
         return f'User {self.name}'
     
 
-engine = create_engine('sqlite:///:memory:', echo=True)
+engine = create_engine('sqlite:///file.db', echo=True)
 Base.metadata.create_all(engine)
