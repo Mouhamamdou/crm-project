@@ -1,11 +1,14 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, create_engine, ForeignKey, DateTime, Boolean
 from datetime import datetime
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, sessionmaker
 import datetime
 import bcrypt
+import jwt
+import os
 
 Base = declarative_base()
+SECRET_KEY = os.environ.get('SECRET_KEY', 'my_secret_key')
 
 class Client(Base):
     __tablename__ = 'clients'
@@ -67,6 +70,33 @@ class User(Base):
     def set_password(self, password):
         salt = bcrypt.gensalt()
         self.password = bcrypt.hashpw(password.encode('utf-8'), salt)
+
+    def check_password(self, password):
+        return bcrypt.checkpw(password.encode('utf-8'), self.password.encode('utf-8'))    
+
+    def generate_token(self):
+        token = jwt.encode({
+            'id' : self.id,
+            'exp' : datetime.datetime.utcnow() + datetime.timedelta(days=30)
+        }, SECRET_KEY, algorithm='HS256')
+        return token
+
+    def register(self, session, employee_number, name, email, department, password):
+        self.employee_number = employee_number
+        self.name = name
+        self.email = email
+        self.department = department
+        self.set_password(password)
+        session.add(self)
+        session.commit()
+        return self
+
+    def authenticate(self, session, email, password):
+        user = session.query(User).filter_by(email=email).first()
+        if user and user.check_password(password):
+            return user.generate_token()
+        else:
+            return None
 
     def __repr__(self):
         return f'User {self.name}'
