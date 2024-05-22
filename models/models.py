@@ -3,13 +3,14 @@ from sqlalchemy import Column, Integer, String, create_engine, ForeignKey, DateT
 from datetime import datetime
 from sqlalchemy.orm import relationship
 import datetime
+import bcrypt
 
 Base = declarative_base()
 
 class Client(Base):
     __tablename__ = 'clients'
     id = Column(Integer, primary_key=True)
-    name = Column(String)
+    name = Column(String, nullable=False)
     email = Column(String)
     telephone = Column(String)
     company_name = Column(String)
@@ -21,7 +22,7 @@ class Client(Base):
     events = relationship('Event', backref='client')
 
     def __repr__(self):
-        return f'User {self.name}'
+        return f'Client {self.name}'
     
 
 class Contract(Base):
@@ -36,9 +37,6 @@ class Contract(Base):
 
     client = relationship('Client', backref='contracts')
     events = relationship('Event', backref='contract')
-
-    def __repr__(self):
-        return f'User {self.name}'
     
 
 class Event(Base):
@@ -55,6 +53,20 @@ class Event(Base):
 
     client = relationship('Client', backref='events')
     contract = relationship('Contract', backref='events')
+    
+
+class User(Base):
+    __tablename__= 'users'
+    id = Column(Integer, primary_key=True)
+    employee_number = Column(Integer, unique=True, nullable=False)
+    name = Column(String, nullable=False)
+    email = Column(String, nullable=False)
+    department = Column(String)
+    password = Column(String, nullable=False)
+    
+    def set_password(self, password):
+        salt = bcrypt.gensalt()
+        self.password = bcrypt.hashpw(password.encode('utf-8'), salt)
 
     def __repr__(self):
         return f'User {self.name}'
