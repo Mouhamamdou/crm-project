@@ -19,7 +19,7 @@ class Client(Base):
     company_name = Column(String)
     creation_date = Column(DateTime, default=datetime.datetime.utcnow)
     last_update = Column(DateTime)
-    commercial = Column(String)
+    commercial_id = Column(Integer, ForeignKey('collaborators.id'))
 
     contracts = relationship('Contract', backref='client')
     events = relationship('Event', backref='client')
@@ -32,7 +32,7 @@ class Contract(Base):
     __tablename__ = 'contracts'
     id = Column(Integer, primary_key=True)
     client_id = Column(Integer, ForeignKey('clients.id'))
-    commercial = Column(String)
+    commercial_id = Column(Integer, ForeignKey('collaborators.id'))
     total_amount = Column(String)
     amount_due = Column(String)
     creation_date = Column(DateTime, default=datetime.datetime.utcnow)
@@ -45,11 +45,11 @@ class Contract(Base):
 class Event(Base):
     __tablename__ = 'events'
     id = Column(Integer, primary_key=True)
-    Contract_id = Column(Integer, ForeignKey('contracts.id'))
+    contract_id = Column(Integer, ForeignKey('contracts.id'))
     client_id = Column(Integer, ForeignKey('clients.id'))
     start_date = Column(DateTime)
     end_date = Column(DateTime)
-    support_contact = Column(String)
+    support_contact_id = Column(Integer, ForeignKey('collaborators.id'))
     location = Column(String)
     attendees = Column(Integer)
     notes = Column(String)
@@ -58,8 +58,8 @@ class Event(Base):
     contract = relationship('Contract', backref='events')
     
 
-class User(Base):
-    __tablename__= 'users'
+class Collaborator(Base):
+    __tablename__= 'collaborators'
     id = Column(Integer, primary_key=True)
     employee_number = Column(Integer, unique=True, nullable=False)
     name = Column(String, nullable=False)
@@ -80,6 +80,17 @@ class User(Base):
             'exp' : datetime.datetime.utcnow() + datetime.timedelta(days=30)
         }, SECRET_KEY, algorithm='HS256')
         return token
+    
+    def verify_token(self, token):
+        try:
+            data = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+            if data['id'] == self.id:
+                return True
+            return False
+        except jwt.ExpiredSignatureError:
+            return False
+        except jwt.InvalidTokenError:
+            return False
 
     def register(self, session, employee_number, name, email, department, password):
         self.employee_number = employee_number
@@ -92,14 +103,14 @@ class User(Base):
         return self
 
     def authenticate(self, session, email, password):
-        user = session.query(User).filter_by(email=email).first()
-        if user and user.check_password(password):
-            return user.generate_token()
+        collaborator = session.query(Collaborator).filter_by(email=email).first()
+        if collaborator and collaborator.check_password(password):
+            return collaborator.generate_token()
         else:
             return None
 
     def __repr__(self):
-        return f'User {self.name}'
+        return f'Collaborator {self.name}'
     
 
 engine = create_engine('sqlite:///file.db', echo=True)
