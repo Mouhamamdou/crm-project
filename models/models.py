@@ -1,7 +1,7 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, create_engine, ForeignKey, DateTime, Boolean
 from datetime import datetime
-from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.orm import relationship
 import datetime
 import bcrypt
 import jwt
@@ -77,7 +77,8 @@ class Collaborator(Base):
     def generate_token(self):
         token = jwt.encode({
             'id' : self.id,
-            'exp' : datetime.datetime.utcnow() + datetime.timedelta(days=30)
+            'exp' : datetime.datetime.utcnow() + datetime.timedelta(days=30),
+            'department': self.department
         }, SECRET_KEY, algorithm='HS256')
         return token
     
@@ -85,12 +86,10 @@ class Collaborator(Base):
         try:
             data = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
             if data['id'] == self.id:
-                return True
-            return False
-        except jwt.ExpiredSignatureError:
-            return False
-        except jwt.InvalidTokenError:
-            return False
+                return data
+            return None
+        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+            return None
 
     def register(self, session, employee_number, name, email, department, password):
         self.employee_number = employee_number

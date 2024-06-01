@@ -1,15 +1,31 @@
 from models import Client, Contract, Event, Collaborator
 
 
-class ClientHandler:
+class BaseHandler:
 
-    def __init__(self, session):
+    def __init__(self, session, token):
         self.session = session
+        self.token_data = Collaborator.verify_token(token)
+        self.collaborator = None
+        if self.token_data:
+            self.collaborator = session.query(Collaborator).get(self.token_data['id'])
+
+    def has_permission(self, department):
+        if not self.collaborator:
+            return False
+        return self.collaborator.department == department        
+
+
+class ClientHandler(BaseHandler):
 
     def get_all_clients(self):
+        if not self.has_permission('commercial'):
+            return {'message' : 'Permission denied'}, 403
         return self.session.query(Client).all()
     
     def create_client(self, name, email, telephone, company_name, commercial_id):
+        if not self.has_permission('commercial'):
+            return {'message' : 'Permission denied'}, 403
         client = Client(
             name=name, 
             email=email, 
@@ -22,6 +38,8 @@ class ClientHandler:
         return client
 
     def update_client(self, client_id, name, email, telephone, company_name, commercial_id):
+        if not self.has_permission('commercial'):
+            return {'message' : 'Permission denied'}, 403
         client = self.session.query(Client).filter_by(id=client_id).first()
         if client:
             client.name = name
@@ -34,15 +52,16 @@ class ClientHandler:
         return None
 
 
-class ContractHandler:
-    
-    def __init__(self, session):
-        self.session = session
+class ContractHandler(BaseHandler):
 
     def get_all_contracts(self):
+        if not self.collaborator:
+            return {'message' : 'Permission denied'}, 403
         return self.session.query(Contract).all()
     
     def create_contract(self, client_id, commercial_id, total_amount, amount_due, status):
+        if not self.has_permission('gestion'):
+            return {'message' : 'Permission denied'}, 403
         contract = Contract(
             client_id=client_id, 
             commercial_id=commercial_id, 
@@ -55,6 +74,8 @@ class ContractHandler:
         return contract
 
     def update_contract(self, contract_id, client_id, commercial_id, total_amount, amount_due, status):
+        if not self.has_permission('gestion'):
+            return {'message' : 'Permission denied'}, 403
         contract = self.session.query(Contract).filter_by(id=contract_id).first()
         if contract:
             contract.client_id = client_id
@@ -67,15 +88,16 @@ class ContractHandler:
         return None
 
 
-class EventHandler:
-    
-    def __init__(self, session):
-        self.session = session
+class EventHandler(BaseHandler):
 
     def get_all_events(self):
+        if not self.collaborator:
+            return {'message': 'Permission denied'}, 403
         return self.session.query(Event).all()
     
     def create_event(self, contract_id, client_id, start_date, end_date, support_contact_id, location, attendees, notes):
+        if not self.has_permission('commercial'):
+            return {'message': 'Permission denied'}, 403
         event = Event(
             contract_id=contract_id, 
             client_id=client_id, 
@@ -91,6 +113,8 @@ class EventHandler:
         return event
 
     def update_event(self, event_id, contract_id, client_id, start_date, end_date, support_contact_id, location, attendees, notes):
+        if not self.has_permission('commercial'):
+            return {'message': 'Permission denied'}, 403
         event = self.session.query(Event).filter_by(id=event_id).first()
         if event:
             event.contract_id = contract_id
@@ -106,15 +130,16 @@ class EventHandler:
         return None
 
 
-class CollaboratorHandler:
-
-    def __init__(self, session):
-        self.session = session
+class CollaboratorHandler(BaseHandler):
 
     def get_all_collaborators(self):
+        if not self.has_permission('gestion'):
+            return {'message': 'Permission denied'}, 403
         return self.session.query(Collaborator).all()
     
     def create_collaborator(self, employee_number, name, email, department, password):
+        if not self.has_permission('gestion'):
+            return {'message': 'Permission denied'}, 403
         collaborator = Collaborator(
             employee_number=employee_number,
             name=name,
@@ -127,6 +152,8 @@ class CollaboratorHandler:
         return collaborator
     
     def update_collaborator(self, collaborator_id, employee_number, name, email, department, password):
+        if not self.has_permission('gestion'):
+            return {'message': 'Permission denied'}, 403
         collaborator = self.session.query(Collaborator).filter_by(id=collaborator_id).first()
         if collaborator:
             collaborator.employee_number = employee_number
