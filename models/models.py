@@ -74,7 +74,7 @@ class Collaborator(Base):
     def check_password(self, password):
         return bcrypt.checkpw(password.encode('utf-8'), self.password.encode('utf-8'))    
 
-    def generate_token(self):
+    def create_token(self):
         token = jwt.encode({
             'id' : self.id,
             'exp' : datetime.datetime.utcnow() + datetime.timedelta(days=30),
@@ -88,8 +88,10 @@ class Collaborator(Base):
             if data['id'] == self.id:
                 return data
             return None
-        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-            return None
+        except jwt.ExpiredSignatureError:
+            return 'expired'
+        except jwt.InvalidTokenError:
+            None
 
     def register(self, session, employee_number, name, email, department, password):
         self.employee_number = employee_number
@@ -104,7 +106,7 @@ class Collaborator(Base):
     def authenticate(self, session, email, password):
         collaborator = session.query(Collaborator).filter_by(email=email).first()
         if collaborator and collaborator.check_password(password):
-            return collaborator.generate_token()
+            return collaborator.create_token()
         else:
             return None
 
