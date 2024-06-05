@@ -7,6 +7,7 @@ import bcrypt
 import jwt
 import os
 
+
 Base = declarative_base()
 SECRET_KEY = os.environ.get('SECRET_KEY', 'my_secret_key')
 
@@ -64,7 +65,7 @@ class Collaborator(Base):
     employee_number = Column(Integer, unique=True, nullable=False)
     name = Column(String, nullable=False)
     email = Column(String, nullable=False)
-    department = Column(String)
+    department = Column(String, nullable=False)
     password = Column(String, nullable=False)
     
     def set_password(self, password):
