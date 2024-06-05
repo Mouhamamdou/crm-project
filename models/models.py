@@ -1,5 +1,5 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, create_engine, ForeignKey, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, Float, create_engine, ForeignKey, DateTime, Boolean
 from datetime import datetime
 from sqlalchemy.orm import relationship
 import datetime
@@ -11,16 +11,19 @@ import os
 Base = declarative_base()
 SECRET_KEY = os.environ.get('SECRET_KEY', 'my_secret_key')
 
+class ValidationError(Exception):
+    pass
+
 class Client(Base):
     __tablename__ = 'clients'
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
-    email = Column(String)
-    telephone = Column(String)
-    company_name = Column(String)
+    email = Column(String, nullable=False)
+    telephone = Column(String, nullable=False)
+    company_name = Column(String, nullable=False)
     creation_date = Column(DateTime, default=datetime.datetime.utcnow)
     last_update = Column(DateTime)
-    commercial_id = Column(Integer, ForeignKey('collaborators.id'))
+    commercial_id = Column(Integer, ForeignKey('collaborators.id'), nullable=False)
 
     contracts = relationship('Contract', backref='client')
     events = relationship('Event', backref='client')
@@ -32,15 +35,41 @@ class Client(Base):
 class Contract(Base):
     __tablename__ = 'contracts'
     id = Column(Integer, primary_key=True)
-    client_id = Column(Integer, ForeignKey('clients.id'))
-    commercial_id = Column(Integer, ForeignKey('collaborators.id'))
-    total_amount = Column(String)
-    amount_due = Column(String)
+    client_id = Column(Integer, ForeignKey('clients.id'), nullable=False)
+    commercial_id = Column(Integer, ForeignKey('collaborators.id'), nullable=False)
+    total_amount = Column(Float, nullable=False)
+    amount_due = Column(Float, nullable=False)
     creation_date = Column(DateTime, default=datetime.datetime.utcnow)
-    status = Column(Boolean)
+    status = Column(Boolean, nullable=False)
 
     client = relationship('Client', backref='contracts')
     events = relationship('Event', backref='contract')
+
+    def validate(self):
+        errors = []
+        
+        if not isinstance(self.client_id, int):
+            errors.append("Client ID must be an integer.")
+        
+        if not isinstance(self.commercial_id, int):
+            errors.append("Commercial ID must be an integer.")
+        
+        if not isinstance(self.total_amount, (int, float)) or self.total_amount <= 0:
+            errors.append("Total amount must be a positive number.")
+        
+        if not isinstance(self.amount_due, (int, float)) or self.amount_due < 0:
+            errors.append("Amount due must be a non-negative number.")
+        
+        if not self.status:
+            errors.append("Status is required.")
+        
+        if errors:
+            raise ValidationError(errors)
+    
+    def save(self, session):
+        self.validate()
+        session.add(self)
+        session.commit()
     
 
 class Event(Base):
