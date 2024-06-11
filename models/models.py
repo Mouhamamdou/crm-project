@@ -75,14 +75,14 @@ class Contract(Base):
 class Event(Base):
     __tablename__ = 'events'
     id = Column(Integer, primary_key=True)
-    contract_id = Column(Integer, ForeignKey('contracts.id'))
-    client_id = Column(Integer, ForeignKey('clients.id'))
+    contract_id = Column(Integer, ForeignKey('contracts.id'), nullable=False)
+    client_id = Column(Integer, ForeignKey('clients.id'), nullable=False)
     start_date = Column(DateTime)
     end_date = Column(DateTime)
-    support_contact_id = Column(Integer, ForeignKey('collaborators.id'))
-    location = Column(String)
-    attendees = Column(Integer)
-    notes = Column(String)
+    support_contact_id = Column(Integer, ForeignKey('collaborators.id'), nullable=False)
+    location = Column(String, nullable=False)
+    attendees = Column(Integer, nullable=False)
+    notes = Column(String, nullable=False)
 
     client = relationship('Client', backref='events')
     contract = relationship('Contract', backref='events')
