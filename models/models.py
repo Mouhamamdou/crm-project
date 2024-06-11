@@ -1,11 +1,12 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, Float, create_engine, ForeignKey, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Boolean
 from datetime import datetime
 from sqlalchemy.orm import relationship
 import datetime
 import bcrypt
 import jwt
 import os
+import re
 
 
 Base = declarative_base()
@@ -27,6 +28,32 @@ class Client(Base):
 
     contracts = relationship('Contract', backref='client')
     events = relationship('Event', backref='client')
+
+    def validate(self):
+        errors = []
+        
+        if not self.name:
+            errors.append("Name is required.")
+        
+        if not self.email or not re.match(r"[^@]+@[^@]+\.[^@]+", self.email):
+            errors.append("Valid email is required.")
+        
+        if not self.telephone or not re.match(r"^\+?[1-9]\d{1,14}$", self.telephone):
+            errors.append("Valid telephone number is required.")
+        
+        if not self.company_name:
+            errors.append("Company name is required.")
+        
+        if not isinstance(self.commercial_id, int):
+            errors.append("Commercial ID must be an integer.")
+        
+        if errors:
+            raise ValidationError(errors)
+    
+    def save(self, session):
+        self.validate()
+        session.add(self)
+        session.commit()
 
     def __repr__(self):
         return f'Client {self.name}'
@@ -82,10 +109,45 @@ class Event(Base):
     support_contact_id = Column(Integer, ForeignKey('collaborators.id'), nullable=False)
     location = Column(String, nullable=False)
     attendees = Column(Integer, nullable=False)
-    notes = Column(String, nullable=False)
+    notes = Column(String)
 
     client = relationship('Client', backref='events')
     contract = relationship('Contract', backref='events')
+
+    def validate(self):
+        errors = []
+
+        if not isinstance(self.contract_id, int):
+            errors.append("contract ID must be an integer.")
+
+        if not isinstance(self.client_id, int):
+            errors.append("Client ID must be an integer.")
+        
+        if not isinstance(self.start_date, datetime):
+            errors.append("Start date must be a valid datetime object.")
+        
+        if not isinstance(self.end_date, datetime):
+            errors.append("End date must be a valid datetime object.")
+        
+        if self.start_date >= self.end_date:
+            errors.append("Start date must be before end date.")
+        
+        if not isinstance(self.support_contact_id, int):
+            errors.append("Support contact ID must be an integer.")
+        
+        if not self.location:
+            errors.append("Location is required.")
+        
+        if not isinstance(self.attendees, int) or self.attendees < 0:
+            errors.append("Attendees must be a non-negative integer.")
+        
+        if errors:
+            raise ValidationError(errors)
+    
+    def save(self, session):
+        self.validate()
+        session.add(self)
+        session.commit()
     
 
 class Collaborator(Base):
@@ -139,10 +201,33 @@ class Collaborator(Base):
             return collaborator.create_token()
         else:
             return None
+        
+    def validate(self):
+        errors = []
+               
+        if not isinstance(self.employee_number, int):
+            errors.append("Employee number must be an integer.")
+        
+        if not self.name:
+            errors.append("Name is required.")
+        
+        if not self.email or not re.match(r"[^@]+@[^@]+\.[^@]+", self.email):
+            errors.append("Valid email is required.")
+               
+        if not self.department:
+            errors.append("Department is required.")
+
+        if not self.password:
+            errors.append("password is required.")    
+
+        if errors:
+            raise ValidationError(errors)
+    
+    def save(self, session):
+        self.validate()
+        session.add(self)
+        session.commit()
 
     def __repr__(self):
         return f'Collaborator {self.name}'
     
-
-engine = create_engine('sqlite:///file.db', echo=True)
-Base.metadata.create_all(engine)

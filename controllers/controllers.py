@@ -49,8 +49,12 @@ class ClientHandler(BaseHandler):
             company_name=data.get('company_name'), 
             commercial_id=data.get('commercial_id')
         )
-        self.session.add(client)
-        self.session.commit()
+
+        try:
+            client.save(self.session)
+        except ValidationError as e:
+            return {'errors': e.args[0]}, 400
+        
         return client
 
     def update_client(self, client_id, data):
@@ -65,7 +69,12 @@ class ClientHandler(BaseHandler):
             client.telephone = data.get('telephone', client.telephone)
             client.company_name = data.get('company_name', client.company_name)
             client.commercial_id = data.get('commercial_id', client.commercial_id)
-            self.session.commit()
+
+            try:
+                client.save(self.session)
+            except ValidationError as e:
+                return {'errors': e.args[0]}, 400
+            
             return client
         return None
 
@@ -141,8 +150,12 @@ class EventHandler(BaseHandler):
             attendees=data.get('attendees'), 
             notes=data.get('notes')
         )
-        self.session.add(event)
-        self.session.commit()
+
+        try:
+            event.save(self.session)
+        except ValidationError as e:
+            return {'errors': e.args[0]}, 400
+    
         return event
 
     def update_event(self, event_id, data):
@@ -160,7 +173,12 @@ class EventHandler(BaseHandler):
             event.location = data.get('location', event.location)
             event.attendees = data.get('attendees', event.attendees)
             event.notes = data.get('notes', event.notes)
-            self.session.commit()
+
+            try:
+                event.save(self.session)
+            except ValidationError as e:
+                return {'errors': e.args[0]}, 400
+        
             return event
         return None
 
