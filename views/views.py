@@ -26,26 +26,16 @@ def login():
         return None
 
 
-def show_clients(token):
-    handler = ClientHandler(session, token)
-    response = handler.get_all_clients()
-    if isinstance(response, tuple):
-        console.print(f"[red]{response[0]['error']}[/red]")
-        return
+def register():
+    employee_number = click.prompt("Employee Number", type=int)
+    name = click.prompt("Name")
+    email = click.prompt("Email")
+    department = click.prompt("Department")
+    password = click.prompt("Password", hide_input=True)
 
-    clients = response
-    table = Table(title="Clients")
-    table.add_column('ID', justify="right", style="cyan", no_wrap=True)
-    table.add_column("Name", style="magenta")
-    table.add_column("Email", style="magenta")  
-    table.add_column("Telephone", style="magenta")
-    table.add_column("Company Name", style="magenta")
-
-    for client in clients:
-        table.add_row(str(client.id), client.name, client.email, 
-                      client.telephone, client.company_name)
-        
-    console.print(table)
+    collaborator = Collaborator()
+    collaborator.register(session, employee_number, name, email, department, password)
+    console.print("[green]Registration successful![/green]")
 
 
 def add_client(token):
@@ -68,18 +58,26 @@ def add_client(token):
     if isinstance(response, tuple):
         console.print(f"[red]{response[0]['errors']}[/red]")
     else:
-        console.print("[green][/green]")
+        console.print("[green]Client added successfully.[/green]")
 
 
-def register():
-    employee_number = click.prompt("Employee Number", type=int)
-    name = click.prompt("Name")
-    email = click.prompt("Email")
-    department = click.prompt("Department")
-    password = click.prompt("Password", hide_input=True)
+def show_clients(token):
+    handler = ClientHandler(session, token)
+    response = handler.get_all_clients()
+    if isinstance(response, tuple):
+        console.print(f"[red]{response[0]['error']}[/red]")
+        return
 
-    collaborator = Collaborator()
-    collaborator.register(session, employee_number, name, email, department, password)
-    console.print("[green]Registration successful![/green]")
+    clients = response
+    table = Table(title="Clients")
+    table.add_column('ID', justify="right", style="cyan", no_wrap=True)
+    table.add_column("Name", style="magenta")
+    table.add_column("Email", style="magenta")  
+    table.add_column("Telephone", style="magenta")
+    table.add_column("Company Name", style="magenta")
 
-    
+    for client in clients:
+        table.add_row(str(client.id), client.name, client.email, 
+                      client.telephone, client.company_name)
+        
+    console.print(table)
