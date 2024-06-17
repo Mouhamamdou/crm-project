@@ -1,13 +1,15 @@
 from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-
-Base = declarative_base()
-
-def init_db(engine, Base):
-    Base.metadata.create_all(engine)
+from models import Base
 
 DATABASE_URL = "sqlite:///file.db"
 
+#Base = declarative_base()
+
 engine = create_engine(DATABASE_URL, echo=True)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def init_db():
+    from models import models
+    Base.metadata.create_all(bind=engine)

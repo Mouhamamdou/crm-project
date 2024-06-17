@@ -14,11 +14,11 @@ session = SessionLocal()
 def login():
     email = click.prompt("Please enter your email")
     password = click.prompt("Please enter your password", hide_input=True)
-    collaborator = session.query(Collaborator).filter_by(email=email).first
+    collaborator = session.query(Collaborator).filter_by(email=email).first()
     token = collaborator.authenticate(session, email, password)
     if token:
         console.print("[green]Login successful![/green]")
-        with open('token.txt') as f:
+        with open('token.txt', 'w') as f:
             f.write(token)
         return token
     else:
@@ -56,7 +56,7 @@ def add_client(token):
 
     response = handler.create_client(data)
     if isinstance(response, tuple):
-        console.print(f"[red]{response[0]['errors']}[/red]")
+        console.print(f"[red]{response[0]}[/red]")
     else:
         console.print("[green]Client added successfully.[/green]")
 
@@ -65,7 +65,7 @@ def show_clients(token):
     handler = ClientHandler(session, token)
     response = handler.get_all_clients()
     if isinstance(response, tuple):
-        console.print(f"[red]{response[0]['error']}[/red]")
+        console.print(f"[red]{response[0]}[/red]")
         return
 
     clients = response
@@ -75,9 +75,13 @@ def show_clients(token):
     table.add_column("Email", style="magenta")  
     table.add_column("Telephone", style="magenta")
     table.add_column("Company Name", style="magenta")
+    table.add_column("Creation Date", style="magenta")
+    table.add_column("Last Update", style="magenta")
+    table.add_column("Contact Commercial", style="magenta")
 
     for client in clients:
+        commercial_name = session.query(Collaborator).filter_by(id=client.commercial_id).first().name
         table.add_row(str(client.id), client.name, client.email, 
-                      client.telephone, client.company_name)
+                      client.telephone,"", "", client.company_name, commercial_name)
         
     console.print(table)

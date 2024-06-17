@@ -5,10 +5,12 @@ class BaseHandler:
 
     def __init__(self, session, token):
         self.session = session
-        self.token_data = Collaborator.verify_token(token)
-        self.collaborator = None
+        collab = Collaborator()
+        self.token_data = collab.verify_token(token)
         if self.token_data and self.token_data != 'expired':
             self.collaborator = session.query(Collaborator).get(self.token_data['id'])
+        else:
+            self.collaborator = None
 
     def has_permission(self, department):
         if not self.collaborator:
@@ -40,7 +42,7 @@ class ClientHandler(BaseHandler):
     def create_client(self, data):
         permission_checked = self.check_permission('commercial')
         if permission_checked:
-            permission_checked
+            return permission_checked
 
         client = Client(
             name=data.get('name'), 

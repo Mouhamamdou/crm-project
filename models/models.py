@@ -9,11 +9,12 @@ import os
 import re
 
 
-Base = declarative_base()
-SECRET_KEY = os.environ.get('SECRET_KEY', 'my_secret_key')
-
 class ValidationError(Exception):
     pass
+
+
+Base = declarative_base()
+
 
 class Client(Base):
     __tablename__ = 'clients'
@@ -26,8 +27,8 @@ class Client(Base):
     last_update = Column(DateTime)
     commercial_id = Column(Integer, ForeignKey('collaborators.id'), nullable=False)
 
-    contracts = relationship('Contract', backref='client')
-    events = relationship('Event', backref='client')
+    contracts = relationship('Contract', back_populates='client')
+    events = relationship('Event', back_populates='client')
 
     def validate(self):
         errors = []
@@ -69,8 +70,8 @@ class Contract(Base):
     creation_date = Column(DateTime, default=datetime.datetime.utcnow)
     status = Column(Boolean, nullable=False)
 
-    client = relationship('Client', backref='contracts')
-    events = relationship('Event', backref='contract')
+    client = relationship('Client', back_populates='contracts')
+    events = relationship('Event', back_populates='contract')
 
     def validate(self):
         errors = []
@@ -87,7 +88,7 @@ class Contract(Base):
         if not isinstance(self.amount_due, (int, float)) or self.amount_due < 0:
             errors.append("Amount due must be a non-negative number.")
         
-        if not self.status:
+        if self.status is None:
             errors.append("Status is required.")
         
         if errors:
@@ -104,15 +105,15 @@ class Event(Base):
     id = Column(Integer, primary_key=True)
     contract_id = Column(Integer, ForeignKey('contracts.id'), nullable=False)
     client_id = Column(Integer, ForeignKey('clients.id'), nullable=False)
-    start_date = Column(DateTime)
+    start_date = Column(DateTime, default=datetime.datetime.utcnow)
     end_date = Column(DateTime)
     support_contact_id = Column(Integer, ForeignKey('collaborators.id'), nullable=False)
     location = Column(String, nullable=False)
     attendees = Column(Integer, nullable=False)
     notes = Column(String)
 
-    client = relationship('Client', backref='events')
-    contract = relationship('Contract', backref='events')
+    client = relationship('Client', back_populates='events')
+    contract = relationship('Contract', back_populates='events')
 
     def validate(self):
         errors = []
@@ -123,14 +124,14 @@ class Event(Base):
         if not isinstance(self.client_id, int):
             errors.append("Client ID must be an integer.")
         
-        if not isinstance(self.start_date, datetime):
-            errors.append("Start date must be a valid datetime object.")
+        #if not isinstance(self.start_date, datetime):
+        #    errors.append("Start date must be a valid datetime object.")
         
-        if not isinstance(self.end_date, datetime):
-            errors.append("End date must be a valid datetime object.")
+        #if not isinstance(self.end_date, datetime):
+        #    errors.append("End date must be a valid datetime object.")
         
-        if self.start_date >= self.end_date:
-            errors.append("Start date must be before end date.")
+        #if self.start_date >= self.end_date:
+        #    errors.append("Start date must be before end date.")
         
         if not isinstance(self.support_contact_id, int):
             errors.append("Support contact ID must be an integer.")
@@ -150,6 +151,8 @@ class Event(Base):
         session.commit()
     
 
+SECRET_KEY = os.environ.get('SECRET_KEY', 'my_secret_key')
+
 class Collaborator(Base):
     __tablename__= 'collaborators'
     id = Column(Integer, primary_key=True)
@@ -164,7 +167,7 @@ class Collaborator(Base):
         self.password = bcrypt.hashpw(password.encode('utf-8'), salt)
 
     def check_password(self, password):
-        return bcrypt.checkpw(password.encode('utf-8'), self.password.encode('utf-8'))    
+        return bcrypt.checkpw(password.encode('utf-8'), self.password)    
 
     def create_token(self):
         token = jwt.encode({
@@ -177,9 +180,7 @@ class Collaborator(Base):
     def verify_token(self, token):
         try:
             data = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
-            if data['id'] == self.id:
-                return data
-            return None
+            return data
         except jwt.ExpiredSignatureError:
             return 'expired'
         except jwt.InvalidTokenError:
