@@ -1,8 +1,9 @@
 import click
 from views import (login as login_view, register as register_view, 
-                   show_clients, add_client, 
+                   show_clients, add_client, update_client,
                    show_contracts, add_contract, 
-                   show_events, add_event)
+                   show_events, add_event, add_support_contact, update_event,
+                   show_collaborators, add_collaborator, update_collaborator, delete_collaborator)
 from config.database import init_db
 
 
@@ -28,13 +29,15 @@ def run():
             token = f.read()
 
         while True:
-            command = click.prompt("Enter a command (view_clients, add_client, view_contracts, add_contract, view_events, add_event, exit)", type=str)
+            command = click.prompt("Enter a command (view_clients, add_client, view_contracts, add_contract, view_events, add_event, add_support_contact, exit)", type=str)
             if command == 'exit':
                 break
             elif command == 'view_clients':
                 show_clients(token)
             elif command == 'add_client':
                 add_client(token)
+            elif command == 'update_client':
+                update_client(token)
             elif command == 'view_contracts':
                 show_contracts(token)
             elif command == 'add_contract':
@@ -43,6 +46,18 @@ def run():
                 show_events(token)
             elif command == 'add_event':
                 add_event(token)
+            elif command == 'add_support_contact':
+                add_support_contact(token)
+            elif command == 'update_event':
+                update_event(token)
+            elif command == 'view_collaborator':
+                show_collaborators(token)
+            elif command == 'add_collaborator':
+                add_collaborator(token)
+            elif command == 'update_collaborator':
+                update_collaborator(token)
+            elif command == 'delete_collaborator':
+                delete_collaborator(token)
             else:
                 click.echo("Unknown command.")
     except FileNotFoundError:

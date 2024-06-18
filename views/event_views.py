@@ -14,7 +14,6 @@ session = SessionLocal()
 
 def add_event(token):
     contract_id = click.prompt("Contract ID", type=int)
-    #client_id = click.prompt("Client ID", type=int)
     end_date_str = click.prompt("End Date (YYYY-MM-DD)")
     end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
     location = click.prompt("Location")
@@ -24,7 +23,6 @@ def add_event(token):
     handler = EventHandler(session, token)
     data = {
         'contract_id': contract_id,
-        #'client_id': client_id,
         'end_date': end_date,
         'location': location,
         'attendees': attendees,
@@ -37,6 +35,29 @@ def add_event(token):
     else:
         console.print("[green]Event added successfully.[/green]")
 
+def update_event(token):
+    event_id = click.prompt("Event ID")
+    contract_id = click.prompt("Contract ID", type=int)
+    end_date_str = click.prompt("End Date (YYYY-MM-DD)")
+    end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+    location = click.prompt("Location")
+    attendees = click.prompt("Attendees", type=int)
+    notes = click.prompt("Notes")
+
+    handler = EventHandler(session, token)
+    data = {
+        'contract_id': contract_id,
+        'end_date': end_date,
+        'location': location,
+        'attendees': attendees,
+        'notes' : notes
+    }
+
+    response = handler.update_event(event_id, data)
+    if isinstance(response, tuple):
+        console.print(f"[red]{response[0]}[/red]")
+    else:
+        console.print("[green]Event updated successfully.[/green]")
 
 def show_events(token):
     handler = EventHandler(session, token)
@@ -61,8 +82,20 @@ def show_events(token):
     for event in events:
         client = session.query(Client).filter_by(id=event.client_id).first()
         support_contact = session.query(Collaborator).filter_by(id=event.support_contact_id).first()
-        table.add_row(str(event.id), str(event.contract_id), client.name, client.email + "/n"+ client.telephone, str(event.start_date), 
-                      str(event.end_date), support_contact if support_contact is not None else "", 
+        table.add_row(str(event.id), str(event.contract_id), client.name, client.email + '\n' + client.telephone, str(event.start_date), 
+                      str(event.end_date), support_contact.name if support_contact is not None else "", 
                       event.location, str(event.attendees), event.notes)
         
     console.print(table)
+
+def add_support_contact(token):
+    event_id = click.prompt("Event ID", type=int)
+    support_contact_id = click.prompt("Support Contact ID", type=int)
+
+    handler = EventHandler(session, token)
+    response = handler.add_support_contact(event_id, support_contact_id)
+    print(response)
+    if isinstance(response, tuple):
+        console.print(f"[red]{response[0]}[/red]")
+    else:
+        console.print("[green]Support contact designated successfully.[/green]")

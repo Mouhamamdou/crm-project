@@ -33,6 +33,24 @@ def add_contract(token):
     else:
         console.print("[green]Contract added successfully.[/green]")
 
+def update_contract(token):
+    contract_id = click.prompt("Contract ID")
+    total_amount = click.prompt("Total Amount", type=float)
+    amount_due = click.prompt("Amount Due", type=float)
+    status = click.prompt("Status (true/false)").lower() in ('true', 'yes', '1')
+
+    handler = ContractHandler(session, token)
+    data = {
+        'total_amount': total_amount,
+        'amount_due': amount_due,
+        'status': status
+    }
+
+    response = handler.update_contract(contract_id, data)
+    if isinstance(response, tuple):
+        console.print(f"[red]{response[0]}[/red]")
+    else:
+        console.print("[green]Contract updated successfully.[/green]")
 
 def show_contracts(token):
     handler = ContractHandler(session, token)

@@ -34,10 +34,7 @@ class BaseHandler:
 
 class ClientHandler(BaseHandler):
 
-    def get_all_clients(self):
-        permission_checked = self.check_permission('commercial')
-        if permission_checked:
-            return permission_checked
+    def get_all_clients(self): 
         return self.session.query(Client).all()
     
     def create_client(self, data):
@@ -65,32 +62,33 @@ class ClientHandler(BaseHandler):
     def update_client(self, client_id, data):
         permission_checked = self.check_permission('commercial')
         if permission_checked:
-            permission_checked
+            return permission_checked
 
         client = self.session.query(Client).filter_by(id=client_id).first()
-        if client:
-            client.name = data.get('name', client.name)
-            client.email = data.get('email', client.email)
-            client.telephone = data.get('telephone', client.telephone)
-            client.company_name = data.get('company_name', client.company_name)
-            client.commercial_id = data.get('commercial_id', client.commercial_id)
-            client.last_update = datetime.datetime.utcnow()
 
-            try:
-                client.save(self.session)
-            except ValidationError as e:
-                return {'errors': e.args[0]}, 400
+        if not client:
+            return {'error': 'Client not found'}, 404
+
+        if client.commercial_id != self.collaborator.id:
+            return {'error': 'This commercial is not the responsible of this client'}, 403
+
+        client.name = data.get('name', client.name)
+        client.email = data.get('email', client.email)
+        client.telephone = data.get('telephone', client.telephone)
+        client.company_name = data.get('company_name', client.company_name)
+        client.last_update = datetime.utcnow()
+
+        try:
+            client.save(self.session)
+        except ValidationError as e:
+            return {'errors': e.args[0]}, 400
             
-            return client
-        return None
+        return client
 
 
 class ContractHandler(BaseHandler):
 
     def get_all_contracts(self):
-        permission_check = self.check_permission('gestion')
-        if permission_check:
-            return permission_check
         return self.session.query(Contract).all()
     
     def create_contract(self, data):
@@ -121,26 +119,30 @@ class ContractHandler(BaseHandler):
             return permission_check
         
         contract = self.session.query(Contract).filter_by(id=contract_id).first()
-        if contract:
-            contract.client_id = data.get('client_id', contract.client_id)
-            contract.commercial_id = data.get('commercial_id', contract.commercial_id)
-            contract.total_amount = data.get('total_amount', contract.total_amount)
-            contract.amount_due = data.get('amount_due', contract.amount_due)
-            contract.status = data.get('status', contract.status)
 
-            try:
-                contract.save(self.session)
-            except ValidationError as e:
-                return {'errors': e.args[0]}, 400
+        if not contract:
+            return {'error': 'Contract not found'}, 404
 
-            return contract
-        return None
+        if contract.commercial_id != self.collaborator.id:
+            return {'error': 'This commercial is not the responsible of this contract'}, 403
+      
+        contract.client_id = data.get('client_id', contract.client_id)
+        contract.commercial_id = data.get('commercial_id', contract.commercial_id)
+        contract.total_amount = data.get('total_amount', contract.total_amount)
+        contract.amount_due = data.get('amount_due', contract.amount_due)
+        contract.status = data.get('status', contract.status)
+
+        try:
+            contract.save(self.session)
+        except ValidationError as e:
+            return {'errors': e.args[0]}, 400
+
+        return contract
 
 
 class EventHandler(BaseHandler):
 
     def get_all_events(self):
-        
         return self.session.query(Event).all()
     
     def create_event(self, data):
@@ -153,9 +155,7 @@ class EventHandler(BaseHandler):
         event = Event(
             contract_id=data.get('contract_id'),
             client_id=contract.client_id, 
-            start_date=data.get('start_date'), 
             end_date=data.get('end_date'), 
-            #support_contact_id=data.get('support_contact_id'), 
             location=data.get('location'), 
             attendees=data.get('attendees'), 
             notes=data.get('notes')
@@ -167,38 +167,55 @@ class EventHandler(BaseHandler):
             return {'errors': e.args[0]}, 400
     
         return event
+    
+    def add_support_contact(self, event_id, support_contact_id):
+        permission_checked = self.check_permission('gestion')
+        if permission_checked:
+            return permission_checked
+
+        event = self.session.query(Event).filter_by(id=event_id).first()
+        support_contact = self.session.query(Collaborator).filter_by(id=support_contact_id).first()
+        if support_contact.department != 'support':
+                return {'error': 'Support Contact must be in support department'}, 403
+        if event:
+            event.support_contact_id = support_contact_id
+            self.session.commit()
+            return event
+        return {'error': 'Event not found'}, 404
 
     def update_event(self, event_id, data):
-        permission_check = self.check_permission('commercial')
+        permission_check = self.check_permission('support')
         if permission_check:
             return permission_check
         
-        event = self.session.query(Event).filter_by(id=event_id).first()
-        if event:
-            event.contract_id = data.get('contract_id', event.contract_id)
-            event.client_id = data.get('client_id', event.client_id)
-            event.start_date = data.get('start_date', event.start_date)
-            event.end_date = data.get('end_date', event.end_date)
-            #event.support_contact_id = data.get('support_contact_id', event.support_contact_id)
-            event.location = data.get('location', event.location)
-            event.attendees = data.get('attendees', event.attendees)
-            event.notes = data.get('notes', event.notes)
-
-            try:
-                event.save(self.session)
-            except ValidationError as e:
-                return {'errors': e.args[0]}, 400
+        contract = self.session.query(Contract).filter_by(id=data.get('contract_id')).first()
         
-            return event
-        return None
+        event = self.session.query(Event).filter_by(id=event_id).first()
+        
+        if not event:
+            return {'error': 'Event not found'}, 404
+
+        if event.support_contact_id != self.collaborator.id:
+            return {'error': 'This support contact is not the responsible of this event'}, 403
+       
+        event.contract_id = data.get('contract_id', event.contract_id)
+        event.client_id = contract.client_id
+        event.end_date = data.get('end_date', event.end_date)
+        event.location = data.get('location', event.location)
+        event.attendees = data.get('attendees', event.attendees)
+        event.notes = data.get('notes', event.notes)
+
+        try:
+            event.save(self.session)
+        except ValidationError as e:
+            return {'errors': e.args[0]}, 400
+        
+        return event
 
 
 class CollaboratorHandler(BaseHandler):
 
     def get_all_collaborators(self):
-        permission_check = self.check_permission('gestion')
-        if permission_check:
-            return permission_check
         return self.session.query(Collaborator).all()
     
     def create_collaborator(self, data):
@@ -223,12 +240,33 @@ class CollaboratorHandler(BaseHandler):
             return permission_check
         
         collaborator = self.session.query(Collaborator).filter_by(id=collaborator_id).first()
-        if collaborator:
-            collaborator.employee_number = data.get('employee_number', collaborator.employee_number)
-            collaborator.name = data.get('name', collaborator.name)
-            collaborator.email = data.get('email', collaborator.email)
-            collaborator.department = data.get('department', collaborator.department)
-            collaborator.set_password(data.get('password', collaborator.password))
-            self.session.commit()
-            return collaborator
-        return None
+
+        if not collaborator:
+            return {'error': 'Collaborator not found'}, 404
+        
+        collaborator.name = data.get('name', collaborator.name)
+        collaborator.email = data.get('email', collaborator.email)
+        collaborator.department = data.get('department', collaborator.department)
+        collaborator.set_password(data.get('password', collaborator.password))
+
+        try:
+            collaborator.save(self.session)
+        except ValidationError as e:
+            return {'errors': e.args[0]}, 400
+        
+        return collaborator
+    
+    def delete_collaborator(self, collaborator_id):
+        permission_check = self.check_permission('gestion')
+        if permission_check:
+            return permission_check
+        
+        collaborator = self.session.query(Collaborator).filter_by(id=collaborator_id).first()
+
+        if not collaborator:
+            return {'error': 'Collaborator not found'}, 404
+        
+    
+        self.session.delete(collaborator)
+        self.session.commit()
+        return {'message': 'Collaborator deleted successfully'}, 200

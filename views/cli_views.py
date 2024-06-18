@@ -58,6 +58,27 @@ def add_client(token):
     else:
         console.print("[green]Client added successfully.[/green]")
 
+def update_client(token):
+    client_id = click.prompt("Client ID")
+    name = click.prompt("Name")
+    email = click.prompt("Email")
+    telephone = click.prompt("Telephone")
+    company_name = click.prompt("Company Name")
+
+    handler = ClientHandler(session, token)
+    data = {
+        'name': name,
+        'email': email,
+        'telephone': telephone,
+        'company_name': company_name
+    }
+
+    response = handler.update_client(client_id, data)
+    if isinstance(response, tuple):
+        console.print(f"[red]{response[0]}[/red]")
+    else:
+        console.print("[green]Client updated successfully.[/green]")
+
 
 def show_clients(token):
     handler = ClientHandler(session, token)
