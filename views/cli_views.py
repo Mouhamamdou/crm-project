@@ -43,15 +43,13 @@ def add_client(token):
     email = click.prompt("Email")
     telephone = click.prompt("Telephone")
     company_name = click.prompt("Company Name")
-    commercial_id = click.prompt("Commercial ID", type=int)
 
     handler = ClientHandler(session, token)
     data = {
         'name': name,
         'email': email,
         'telephone': telephone,
-        'company_name': company_name,
-        'commercial_id': commercial_id
+        'company_name': company_name
     }
 
     response = handler.create_client(data)
@@ -82,6 +80,6 @@ def show_clients(token):
     for client in clients:
         commercial_name = session.query(Collaborator).filter_by(id=client.commercial_id).first().name
         table.add_row(str(client.id), client.name, client.email, 
-                      client.telephone,"", "", client.company_name, commercial_name)
+                      client.telephone, client.company_name,str(client.creation_date), str(client.last_update), commercial_name)
         
     console.print(table)

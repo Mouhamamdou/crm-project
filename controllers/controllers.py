@@ -1,4 +1,5 @@
 from models import Client, Contract, Event, Collaborator, ValidationError
+from datetime import datetime
 
 
 class BaseHandler:
@@ -43,13 +44,15 @@ class ClientHandler(BaseHandler):
         permission_checked = self.check_permission('commercial')
         if permission_checked:
             return permission_checked
+        
+        commercial_id = self.collaborator.id
 
         client = Client(
             name=data.get('name'), 
             email=data.get('email'), 
             telephone=data.get('telephone'), 
             company_name=data.get('company_name'), 
-            commercial_id=data.get('commercial_id')
+            commercial_id=commercial_id
         )
 
         try:
@@ -71,6 +74,7 @@ class ClientHandler(BaseHandler):
             client.telephone = data.get('telephone', client.telephone)
             client.company_name = data.get('company_name', client.company_name)
             client.commercial_id = data.get('commercial_id', client.commercial_id)
+            client.last_update = datetime.datetime.utcnow()
 
             try:
                 client.save(self.session)
@@ -94,9 +98,11 @@ class ContractHandler(BaseHandler):
         if permission_check:
             return permission_check
         
+        client = self.session.query(Client).get(data.get('client_id'))
+        
         contract = Contract(
             client_id=data.get('client_id'), 
-            commercial_id=data.get('commercial_id'), 
+            commercial_id=client.commercial_id, 
             total_amount=data.get('total_amount'), 
             amount_due=data.get('amount_due'), 
             status=data.get('status')
@@ -142,12 +148,14 @@ class EventHandler(BaseHandler):
         if permission_check:
             return permission_check
         
+        contract = self.session.query(Contract).get(data.get('contract_id'))
+        
         event = Event(
             contract_id=data.get('contract_id'),
-            client_id=data.get('client_id'), 
+            client_id=contract.client_id, 
             start_date=data.get('start_date'), 
             end_date=data.get('end_date'), 
-            support_contact_id=data.get('support_contact_id'), 
+            #support_contact_id=data.get('support_contact_id'), 
             location=data.get('location'), 
             attendees=data.get('attendees'), 
             notes=data.get('notes')
@@ -171,7 +179,7 @@ class EventHandler(BaseHandler):
             event.client_id = data.get('client_id', event.client_id)
             event.start_date = data.get('start_date', event.start_date)
             event.end_date = data.get('end_date', event.end_date)
-            event.support_contact_id = data.get('support_contact_id', event.support_contact_id)
+            #event.support_contact_id = data.get('support_contact_id', event.support_contact_id)
             event.location = data.get('location', event.location)
             event.attendees = data.get('attendees', event.attendees)
             event.notes = data.get('notes', event.notes)

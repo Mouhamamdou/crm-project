@@ -1,8 +1,7 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Boolean
-from datetime import datetime
+from datetime import datetime, timedelta
 from sqlalchemy.orm import relationship
-import datetime
 import bcrypt
 import jwt
 import os
@@ -23,7 +22,7 @@ class Client(Base):
     email = Column(String, nullable=False)
     telephone = Column(String, nullable=False)
     company_name = Column(String, nullable=False)
-    creation_date = Column(DateTime, default=datetime.datetime.utcnow)
+    creation_date = Column(DateTime, default=datetime.utcnow)
     last_update = Column(DateTime)
     commercial_id = Column(Integer, ForeignKey('collaborators.id'), nullable=False)
 
@@ -67,7 +66,7 @@ class Contract(Base):
     commercial_id = Column(Integer, ForeignKey('collaborators.id'), nullable=False)
     total_amount = Column(Float, nullable=False)
     amount_due = Column(Float, nullable=False)
-    creation_date = Column(DateTime, default=datetime.datetime.utcnow)
+    creation_date = Column(DateTime, default=datetime.utcnow)
     status = Column(Boolean, nullable=False)
 
     client = relationship('Client', back_populates='contracts')
@@ -105,9 +104,9 @@ class Event(Base):
     id = Column(Integer, primary_key=True)
     contract_id = Column(Integer, ForeignKey('contracts.id'), nullable=False)
     client_id = Column(Integer, ForeignKey('clients.id'), nullable=False)
-    start_date = Column(DateTime, default=datetime.datetime.utcnow)
+    start_date = Column(DateTime, default=datetime.utcnow)
     end_date = Column(DateTime)
-    support_contact_id = Column(Integer, ForeignKey('collaborators.id'), nullable=False)
+    support_contact_id = Column(Integer, ForeignKey('collaborators.id'), nullable=True)
     location = Column(String, nullable=False)
     attendees = Column(Integer, nullable=False)
     notes = Column(String)
@@ -124,17 +123,13 @@ class Event(Base):
         if not isinstance(self.client_id, int):
             errors.append("Client ID must be an integer.")
         
-        #if not isinstance(self.start_date, datetime):
-        #    errors.append("Start date must be a valid datetime object.")
+        if not isinstance(self.end_date, datetime):
+            errors.append("End date must be a valid datetime object.")
         
-        #if not isinstance(self.end_date, datetime):
-        #    errors.append("End date must be a valid datetime object.")
-        
+        print(self.start_date)
+        print(self.end_date)
         #if self.start_date >= self.end_date:
         #    errors.append("Start date must be before end date.")
-        
-        if not isinstance(self.support_contact_id, int):
-            errors.append("Support contact ID must be an integer.")
         
         if not self.location:
             errors.append("Location is required.")
@@ -172,7 +167,7 @@ class Collaborator(Base):
     def create_token(self):
         token = jwt.encode({
             'id' : self.id,
-            'exp' : datetime.datetime.utcnow() + datetime.timedelta(days=30),
+            'exp' : datetime.utcnow() + timedelta(days=30),
             'department': self.department
         }, SECRET_KEY, algorithm='HS256')
         return token

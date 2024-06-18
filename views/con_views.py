@@ -13,7 +13,7 @@ session = SessionLocal()
 
 def add_contract(token):
     client_id = click.prompt("Client ID", type=int)
-    commercial_id = click.prompt("Commercial ID", type=int)
+    #commercial_id = click.prompt("Commercial ID", type=int)
     total_amount = click.prompt("Total Amount", type=float)
     amount_due = click.prompt("Amount Due", type=float)
     status = click.prompt("Status (true/false)").lower() in ('true', 'yes', '1')
@@ -21,7 +21,7 @@ def add_contract(token):
     handler = ContractHandler(session, token)
     data = {
         'client_id': client_id,
-        'commercial_id': commercial_id,
+        #'commercial_id': commercial_id,
         'total_amount': total_amount,
         'amount_due': amount_due,
         'status': status
@@ -55,6 +55,6 @@ def show_contracts(token):
         commercial_name = session.query(Collaborator).filter_by(id=contract.commercial_id).first().name
         client_name = session.query(Client).filter_by(id=contract.client_id).first().name
         table.add_row(str(contract.id), client_name, commercial_name, 
-                      str(contract.total_amount), str(contract.amount_due), "", str(contract.status))
+                      str(contract.total_amount), str(contract.amount_due), str(contract.creation_date), str(contract.status))
         
     console.print(table)
