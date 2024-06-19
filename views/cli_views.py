@@ -12,8 +12,8 @@ session = SessionLocal()
 
 
 def login():
-    email = click.prompt("Please enter your email")
-    password = click.prompt("Please enter your password", hide_input=True)
+    email = click.prompt("Email")
+    password = click.prompt("Password", hide_input=True)
     collaborator = session.query(Collaborator).filter_by(email=email).first()
     token = collaborator.authenticate(session, email, password)
     if token:
@@ -27,14 +27,13 @@ def login():
 
 
 def register():
-    employee_number = click.prompt("Employee Number", type=int)
     name = click.prompt("Name")
     email = click.prompt("Email")
-    department = click.prompt("Department")
     password = click.prompt("Password", hide_input=True)
+    department = click.prompt("Department(gestion/commercial/support)")
 
     collaborator = Collaborator()
-    collaborator.register(session, employee_number, name, email, department, password)
+    collaborator.register(session, name, email, department, password)
     console.print("[green]Registration successful![/green]")
 
 
@@ -52,11 +51,11 @@ def add_client(token):
         'company_name': company_name
     }
 
-    response = handler.create_client(data)
-    if isinstance(response, tuple):
-        console.print(f"[red]{response[0]}[/red]")
-    else:
+    try:
+        handler.create_client(data)
         console.print("[green]Client added successfully.[/green]")
+    except Exception as e:
+        console.print(f"[red]{e}[/red]")
 
 def update_client(token):
     client_id = click.prompt("Client ID")
@@ -73,34 +72,33 @@ def update_client(token):
         'company_name': company_name
     }
 
-    response = handler.update_client(client_id, data)
-    if isinstance(response, tuple):
-        console.print(f"[red]{response[0]}[/red]")
-    else:
+    try:
+        handler.update_client(client_id, data)
         console.print("[green]Client updated successfully.[/green]")
+    except Exception as e:
+        console.print(f"[red]{e}[/red]")
 
 
 def show_clients(token):
     handler = ClientHandler(session, token)
-    response = handler.get_all_clients()
-    if isinstance(response, tuple):
-        console.print(f"[red]{response[0]}[/red]")
-        return
+    try:
+        clients = handler.get_all_clients()
+        table = Table(title="Clients")
+        table.add_column('ID', justify="right", style="cyan", no_wrap=True)
+        table.add_column("Name", style="magenta")
+        table.add_column("Email", style="magenta")  
+        table.add_column("Telephone", style="magenta")
+        table.add_column("Company Name", style="magenta")
+        table.add_column("Creation Date", style="magenta")
+        table.add_column("Last Update", style="magenta")
+        table.add_column("Contact Commercial", style="magenta")
 
-    clients = response
-    table = Table(title="Clients")
-    table.add_column('ID', justify="right", style="cyan", no_wrap=True)
-    table.add_column("Name", style="magenta")
-    table.add_column("Email", style="magenta")  
-    table.add_column("Telephone", style="magenta")
-    table.add_column("Company Name", style="magenta")
-    table.add_column("Creation Date", style="magenta")
-    table.add_column("Last Update", style="magenta")
-    table.add_column("Contact Commercial", style="magenta")
-
-    for client in clients:
-        commercial_name = session.query(Collaborator).filter_by(id=client.commercial_id).first().name
-        table.add_row(str(client.id), client.name, client.email, 
+        for client in clients:
+            commercial_name = session.query(Collaborator).filter_by(id=client.commercial_id).first().name
+            table.add_row(str(client.id), client.name, client.email, 
                       client.telephone, client.company_name,str(client.creation_date), str(client.last_update), commercial_name)
         
-    console.print(table)
+        console.print(table)
+    except Exception as e:
+        console.print(f"[red]{e}[/red]")
+    

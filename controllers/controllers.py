@@ -13,23 +13,14 @@ class BaseHandler:
         else:
             self.collaborator = None
 
-    def has_permission(self, department):
-        if not self.collaborator:
-            return False
-        return self.collaborator.department == department  
-
     def token_is_valid(self):
-        if self.token_data and self.token_data != 'expired':
-            return None
-        return {'token is expired. Please log in again.'}, 401
+        if not self.token_data or self.token_data == 'expired':
+            raise Exception('Token is expired. Please log in again.')
 
     def check_permission(self, department):
-        token_check = self.token_is_valid()
-        if token_check:
-            return token_check
-        if not self.has_permission(department):
-            return {'Permission denied'}, 403
-        return None
+        self.token_is_valid()
+        if not self.collaborator or self.collaborator.department != department:
+            raise Exception('Permission denied')
 
 
 class ClientHandler(BaseHandler):
@@ -38,9 +29,7 @@ class ClientHandler(BaseHandler):
         return self.session.query(Client).all()
     
     def create_client(self, data):
-        permission_checked = self.check_permission('commercial')
-        if permission_checked:
-            return permission_checked
+        self.check_permission('commercial')
         
         commercial_id = self.collaborator.id
 
@@ -52,25 +41,19 @@ class ClientHandler(BaseHandler):
             commercial_id=commercial_id
         )
 
-        try:
-            client.save(self.session)
-        except ValidationError as e:
-            return {'errors': e.args[0]}, 400
-        
+        client.save(self.session)
         return client
 
     def update_client(self, client_id, data):
-        permission_checked = self.check_permission('commercial')
-        if permission_checked:
-            return permission_checked
+        self.check_permission('commercial')
 
         client = self.session.query(Client).filter_by(id=client_id).first()
 
         if not client:
-            return {'error': 'Client not found'}, 404
+            raise Exception('Client not found')
 
         if client.commercial_id != self.collaborator.id:
-            return {'error': 'This commercial is not the responsible of this client'}, 403
+            raise Exception('This commercial is not the responsible of this client')
 
         client.name = data.get('name', client.name)
         client.email = data.get('email', client.email)
@@ -78,11 +61,7 @@ class ClientHandler(BaseHandler):
         client.company_name = data.get('company_name', client.company_name)
         client.last_update = datetime.utcnow()
 
-        try:
-            client.save(self.session)
-        except ValidationError as e:
-            return {'errors': e.args[0]}, 400
-            
+        client.save(self.session)  
         return client
 
 
@@ -92,9 +71,7 @@ class ContractHandler(BaseHandler):
         return self.session.query(Contract).all()
     
     def create_contract(self, data):
-        permission_check = self.check_permission('gestion')
-        if permission_check:
-            return permission_check
+        self.check_permission('gestion')
         
         client = self.session.query(Client).get(data.get('client_id'))
         
@@ -106,25 +83,19 @@ class ContractHandler(BaseHandler):
             status=data.get('status')
         )
         
-        try:
-            contract.save(self.session)
-        except ValidationError as e:
-            return {'errors': e.args[0]}, 400
-
+        contract.save(self.session)
         return contract
 
     def update_contract(self, contract_id, data):
-        permission_check = self.check_permission('gestion')
-        if permission_check:
-            return permission_check
         
         contract = self.session.query(Contract).filter_by(id=contract_id).first()
 
-        if not contract:
-            return {'error': 'Contract not found'}, 404
+        self.token_is_valid()
+        if self.collaborator.department != 'gestion' and contract.commercial_id != self.collaborator.id:
+            raise Exception('You do not have permission to modify this contract')
 
-        if contract.commercial_id != self.collaborator.id:
-            return {'error': 'This commercial is not the responsible of this contract'}, 403
+        if not contract:
+            raise Exception('Contract not found')
       
         contract.client_id = data.get('client_id', contract.client_id)
         contract.commercial_id = data.get('commercial_id', contract.commercial_id)
@@ -132,11 +103,7 @@ class ContractHandler(BaseHandler):
         contract.amount_due = data.get('amount_due', contract.amount_due)
         contract.status = data.get('status', contract.status)
 
-        try:
-            contract.save(self.session)
-        except ValidationError as e:
-            return {'errors': e.args[0]}, 400
-
+        contract.save(self.session)
         return contract
 
 
@@ -146,11 +113,12 @@ class EventHandler(BaseHandler):
         return self.session.query(Event).all()
     
     def create_event(self, data):
-        permission_check = self.check_permission('commercial')
-        if permission_check:
-            return permission_check
-        
+        self.check_permission('commercial')
+ 
         contract = self.session.query(Contract).get(data.get('contract_id'))
+
+        if contract.commercial_id != self.collaborator.id :
+            raise Exception('You do not have permission to create the event')
         
         event = Event(
             contract_id=data.get('contract_id'),
@@ -161,55 +129,43 @@ class EventHandler(BaseHandler):
             notes=data.get('notes')
         )
 
-        try:
-            event.save(self.session)
-        except ValidationError as e:
-            return {'errors': e.args[0]}, 400
-    
+        event.save(self.session)
         return event
     
     def add_support_contact(self, event_id, support_contact_id):
-        permission_checked = self.check_permission('gestion')
-        if permission_checked:
-            return permission_checked
+        self.check_permission('gestion')
 
         event = self.session.query(Event).filter_by(id=event_id).first()
+
+        if not event:
+            raise Exception('Event not found')
+
         support_contact = self.session.query(Collaborator).filter_by(id=support_contact_id).first()
+
         if support_contact.department != 'support':
-                return {'error': 'Support Contact must be in support department'}, 403
-        if event:
-            event.support_contact_id = support_contact_id
-            self.session.commit()
-            return event
-        return {'error': 'Event not found'}, 404
+                raise Exception('Support contact must be in support department')
+        
+        event.support_contact_id = support_contact_id
+        self.session.commit()
+        return event
 
     def update_event(self, event_id, data):
-        permission_check = self.check_permission('support')
-        if permission_check:
-            return permission_check
-        
-        contract = self.session.query(Contract).filter_by(id=data.get('contract_id')).first()
+        self.check_permission('support')
         
         event = self.session.query(Event).filter_by(id=event_id).first()
         
         if not event:
-            return {'error': 'Event not found'}, 404
+            raise Exception('Event not found')
 
         if event.support_contact_id != self.collaborator.id:
-            return {'error': 'This support contact is not the responsible of this event'}, 403
-       
-        event.contract_id = data.get('contract_id', event.contract_id)
-        event.client_id = contract.client_id
+            raise Exception('This support contact is not the responsible of this event') 
+ 
         event.end_date = data.get('end_date', event.end_date)
         event.location = data.get('location', event.location)
         event.attendees = data.get('attendees', event.attendees)
         event.notes = data.get('notes', event.notes)
 
-        try:
-            event.save(self.session)
-        except ValidationError as e:
-            return {'errors': e.args[0]}, 400
-        
+        event.save(self.session)
         return event
 
 
@@ -219,12 +175,9 @@ class CollaboratorHandler(BaseHandler):
         return self.session.query(Collaborator).all()
     
     def create_collaborator(self, data):
-        permission_check = self.check_permission('gestion')
-        if permission_check:
-            return permission_check
+        self.check_permission('gestion')
         
         collaborator = Collaborator(
-            employee_number=data.get('employee_number'),
             name=data.get('name'),
             email=data.get('email'),
             department=data.get('department')
@@ -235,36 +188,28 @@ class CollaboratorHandler(BaseHandler):
         return collaborator
     
     def update_collaborator(self, collaborator_id, data):
-        permission_check = self.check_permission('gestion')
-        if permission_check:
-            return permission_check
+        self.check_permission('gestion')
         
         collaborator = self.session.query(Collaborator).filter_by(id=collaborator_id).first()
 
         if not collaborator:
-            return {'error': 'Collaborator not found'}, 404
+            raise Exception('Collaborator not found')
         
         collaborator.name = data.get('name', collaborator.name)
         collaborator.email = data.get('email', collaborator.email)
         collaborator.department = data.get('department', collaborator.department)
         collaborator.set_password(data.get('password', collaborator.password))
 
-        try:
-            collaborator.save(self.session)
-        except ValidationError as e:
-            return {'errors': e.args[0]}, 400
-        
+        collaborator.save(self.session)
         return collaborator
     
     def delete_collaborator(self, collaborator_id):
-        permission_check = self.check_permission('gestion')
-        if permission_check:
-            return permission_check
+        self.check_permission('gestion')
         
         collaborator = self.session.query(Collaborator).filter_by(id=collaborator_id).first()
 
         if not collaborator:
-            return {'error': 'Collaborator not found'}, 404
+            raise Exception('Collaborator not found')
         
     
         self.session.delete(collaborator)

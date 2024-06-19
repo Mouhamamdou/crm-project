@@ -151,7 +151,6 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'my_secret_key')
 class Collaborator(Base):
     __tablename__= 'collaborators'
     id = Column(Integer, primary_key=True)
-    employee_number = Column(Integer, unique=True, nullable=False)
     name = Column(String, nullable=False)
     email = Column(String, nullable=False)
     department = Column(String, nullable=False)
@@ -181,8 +180,7 @@ class Collaborator(Base):
         except jwt.InvalidTokenError:
             None
 
-    def register(self, session, employee_number, name, email, department, password):
-        self.employee_number = employee_number
+    def register(self, session, name, email, department, password):
         self.name = name
         self.email = email
         self.department = department
@@ -200,9 +198,6 @@ class Collaborator(Base):
         
     def validate(self):
         errors = []
-               
-        if not isinstance(self.employee_number, int):
-            errors.append("Employee number must be an integer.")
         
         if not self.name:
             errors.append("Name is required.")

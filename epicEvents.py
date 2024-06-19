@@ -1,7 +1,7 @@
 import click
 from views import (login as login_view, register as register_view, 
                    show_clients, add_client, update_client,
-                   show_contracts, add_contract, 
+                   show_contracts, add_contract,update_contract,
                    show_events, add_event, add_support_contact, update_event,
                    show_collaborators, add_collaborator, update_collaborator, delete_collaborator)
 from config.database import init_db
@@ -42,6 +42,8 @@ def run():
                 show_contracts(token)
             elif command == 'add_contract':
                 add_contract(token)
+            elif command == 'update_contract':
+                update_contract(token)
             elif command == 'view_events':
                 show_events(token)
             elif command == 'add_event':
@@ -50,7 +52,7 @@ def run():
                 add_support_contact(token)
             elif command == 'update_event':
                 update_event(token)
-            elif command == 'view_collaborator':
+            elif command == 'view_collaborators':
                 show_collaborators(token)
             elif command == 'add_collaborator':
                 add_collaborator(token)

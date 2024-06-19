@@ -12,33 +12,32 @@ session = SessionLocal()
 
 
 def add_collaborator(token):
-    employee_number = click.prompt("Employee Number")
     name = click.prompt("Name")
     email = click.prompt("Email")
     department = click.prompt("Department(gestion/commercial/support)")
-    password = click.prompt("Name", hide_input=True)
+    password = click.prompt("Password", hide_input=True)
 
     handler = CollaboratorHandler(session, token)
     data = {
-        'employee number': employee_number,
         'name': name,
         'email': email,
         'department': department,
         'password': password
     }
 
-    response = handler.create_collaborator(data)
-    if isinstance(response, tuple):
-        console.print(f"[red]{response[0]}[/red]")
-    else:
-        console.print("[green]Client added successfully.[/green]")
+    try:
+        handler.create_collaborator(data)
+        console.print("[green]Collaborator added successfully.[/green]")
+    except Exception as e:
+        console.print(f"[red]{e}[/red]")
+
 
 def update_collaborator(token):
     collaborator_id = click.prompt("Collaborator ID")
     name = click.prompt("Name")
     email = click.prompt("Email")
     department = click.prompt("Department(gestion/commercial/support)")
-    password = click.prompt("Name", hide_input=True)
+    password = click.prompt("Password", hide_input=True)
 
     handler = CollaboratorHandler(session, token)
     data = {
@@ -48,32 +47,29 @@ def update_collaborator(token):
         'password': password
     }
 
-    response = handler.update_collaborator(collaborator_id, data)
-    if isinstance(response, tuple):
-        console.print(f"[red]{response[0]}[/red]")
-    else:
-        console.print("[green]Collaborator updated successfully.[/green]")
+    try:
+        handler.update_collaborator(collaborator_id, data)
+        console.print("[green]Collaborator added successfully.[/green]")
+    except Exception as e:
+        console.print(f"[red]{e}[/red]")    
+
 
 def show_collaborators(token):
     handler = CollaboratorHandler(session, token)
-    response = handler.get_all_collaborators()
-    if isinstance(response, tuple):
-        console.print(f"[red]{response[0]}[/red]")
-        return
+    try:
+        collaborators = handler.get_all_collaborators()
+        table = Table(title="Collaborators")
+        table.add_column('ID', justify="right", style="cyan", no_wrap=True)
+        table.add_column("Name", style="magenta")
+        table.add_column("Email", style="magenta")
+        table.add_column("Department", style="magenta")
 
-    collaborators = response
-    table = Table(title="Collaborators")
-    table.add_column('ID', justify="right", style="cyan", no_wrap=True)
-    table.add_column("Employee Number", style="magenta")
-    table.add_column("Name", style="magenta")
-    table.add_column("Email", style="magenta")
-    table.add_column("Department", style="magenta")
-
-    for collaborator in collaborators:
-        table.add_row(str(collaborator.id), str(collaborator.employee_number), collaborator.name, 
-                      collaborator.email, collaborator.department)
-        
-    console.print(table)
+        for collaborator in collaborators:
+            table.add_row(str(collaborator.id), collaborator.name, collaborator.email, collaborator.department)
+            
+        console.print(table)
+    except Exception as e:
+        console.print(f"[red]{e}[/red]")
 
 def delete_collaborator(token):
     collaborator_id = click.prompt("Collaborator ID")
