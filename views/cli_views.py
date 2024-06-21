@@ -94,9 +94,12 @@ def show_clients(token):
         table.add_column("Contact Commercial", style="magenta")
 
         for client in clients:
-            commercial_name = session.query(Collaborator).filter_by(id=client.commercial_id).first().name
-            table.add_row(str(client.id), client.name, client.email, 
-                      client.telephone, client.company_name,str(client.creation_date), str(client.last_update), commercial_name)
+            try:
+                commercial_name = session.query(Collaborator).filter_by(id=client.commercial_id).first().name
+            except Exception:
+                commercial_name = None
+            table.add_row(str(client.id), client.name, client.email, client.telephone, client.company_name, str(client.creation_date), 
+                          str(client.last_update), commercial_name)
         
         console.print(table)
     except Exception as e:

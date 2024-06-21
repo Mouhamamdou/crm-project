@@ -50,7 +50,6 @@ def update_contract(token):
     except Exception as e:
         console.print(f"[red]{e}[/red]")
         
-
 def show_contracts(token):
     handler = ContractHandler(session, token)
     try:
@@ -66,7 +65,37 @@ def show_contracts(token):
         table.add_column("Status", style="magenta")
 
         for contract in contracts:
-            commercial_name = session.query(Collaborator).filter_by(id=contract.commercial_id).first().name
+            try:
+                commercial_name = session.query(Collaborator).filter_by(id=contract.commercial_id).first().name
+            except Exception:
+                commercial_name = None
+            client_name = session.query(Client).filter_by(id=contract.client_id).first().name
+            table.add_row(str(contract.id), client_name, commercial_name, 
+                        str(contract.total_amount), str(contract.amount_due), str(contract.creation_date), str(contract.status))
+            
+        console.print(table)
+    except Exception as e:
+        console.print(f"[red]{e}[/red]")
+
+def filter_contracts(token):
+    handler = ContractHandler(session, token)
+    try:
+        contracts = handler.filter_contacts_not_paid()
+    
+        table = Table(title="Contracts")
+        table.add_column('ID', justify="right", style="cyan", no_wrap=True)
+        table.add_column("Client Contact", style="magenta")
+        table.add_column("Commercial Contact", style="magenta")  
+        table.add_column("Total Amount", style="magenta")
+        table.add_column("Amount Due", style="magenta")
+        table.add_column("Creation Date", style="magenta")
+        table.add_column("Status", style="magenta")
+
+        for contract in contracts:
+            try:
+                commercial_name = session.query(Collaborator).filter_by(id=contract.commercial_id).first().name
+            except Exception:
+                commercial_name = None
             client_name = session.query(Client).filter_by(id=contract.client_id).first().name
             table.add_row(str(contract.id), client_name, commercial_name, 
                         str(contract.total_amount), str(contract.amount_due), str(contract.creation_date), str(contract.status))

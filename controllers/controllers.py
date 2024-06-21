@@ -26,6 +26,8 @@ class BaseHandler:
 class ClientHandler(BaseHandler):
 
     def get_all_clients(self): 
+        self.token_is_valid()
+        print(self.session.query(Client).all())
         return self.session.query(Client).all()
     
     def create_client(self, data):
@@ -68,7 +70,12 @@ class ClientHandler(BaseHandler):
 class ContractHandler(BaseHandler):
 
     def get_all_contracts(self):
+        self.token_is_valid()
         return self.session.query(Contract).all()
+    
+    def filter_contacts_not_paid(self):
+        self.check_permission("commercial")
+        return self.session.query(Contract).filter_by(status=False)
     
     def create_contract(self, data):
         self.check_permission('gestion')
@@ -110,7 +117,16 @@ class ContractHandler(BaseHandler):
 class EventHandler(BaseHandler):
 
     def get_all_events(self):
+        self.token_is_valid()
         return self.session.query(Event).all()
+    
+    def filter_events_without_support(self):
+        self.check_permission('gestion')
+        return self.session.query(Event).filter_by(support_contact_id=None)
+    
+    def filter_my_events(self):
+        self.check_permission('support')
+        return self.session.query(Event).filter_by(support_contact_id=self.collaborator.id)
     
     def create_event(self, data):
         self.check_permission('commercial')
@@ -172,6 +188,7 @@ class EventHandler(BaseHandler):
 class CollaboratorHandler(BaseHandler):
 
     def get_all_collaborators(self):
+        self.token_is_valid
         return self.session.query(Collaborator).all()
     
     def create_collaborator(self, data):

@@ -85,6 +85,64 @@ def show_events(token):
     except Exception as e:
         console.print(f"[red]{e}[/red]")
 
+
+def filter_events_ws(token):
+    handler = EventHandler(session, token)
+    try:
+        events = handler.filter_events_without_support()
+        table = Table(title="Events")
+        table.add_column('ID', justify="right", style="cyan", no_wrap=True)
+        table.add_column("Contract ID", style="magenta")
+        table.add_column("Client Name", style="magenta")
+        table.add_column("Client Contact", style="magenta")
+        table.add_column("Start Date", style="magenta")
+        table.add_column("End Date", style="magenta")
+        table.add_column("Support Contact", style="magenta")
+        table.add_column("Location", style="magenta")
+        table.add_column("Attendees", style="magenta")
+        table.add_column("Notes", style="magenta")
+
+        for event in events:
+            client = session.query(Client).filter_by(id=event.client_id).first()
+            support_contact = session.query(Collaborator).filter_by(id=event.support_contact_id).first()
+            table.add_row(str(event.id), str(event.contract_id), client.name, client.email + '\n' + client.telephone, str(event.start_date), 
+                        str(event.end_date), support_contact.name if support_contact is not None else "", 
+                        event.location, str(event.attendees), event.notes)
+            
+        console.print(table)
+
+    except Exception as e:
+        console.print(f"[red]{e}[/red]")
+
+def filter_my_events(token):
+    handler = EventHandler(session, token)
+    try:
+        events = handler.filter_my_events()
+        table = Table(title="Events")
+        table.add_column('ID', justify="right", style="cyan", no_wrap=True)
+        table.add_column("Contract ID", style="magenta")
+        table.add_column("Client Name", style="magenta")
+        table.add_column("Client Contact", style="magenta")
+        table.add_column("Start Date", style="magenta")
+        table.add_column("End Date", style="magenta")
+        table.add_column("Support Contact", style="magenta")
+        table.add_column("Location", style="magenta")
+        table.add_column("Attendees", style="magenta")
+        table.add_column("Notes", style="magenta")
+
+        for event in events:
+            client = session.query(Client).filter_by(id=event.client_id).first()
+            support_contact = session.query(Collaborator).filter_by(id=event.support_contact_id).first()
+            table.add_row(str(event.id), str(event.contract_id), client.name, client.email + '\n' + client.telephone, str(event.start_date), 
+                        str(event.end_date), support_contact.name if support_contact is not None else "", 
+                        event.location, str(event.attendees), event.notes)
+            
+        console.print(table)
+
+    except Exception as e:
+        console.print(f"[red]{e}[/red]")
+
+
 def add_support_contact(token):
     event_id = click.prompt("Event ID", type=int)
     support_contact_id = click.prompt("Support Contact ID", type=int)
