@@ -4,6 +4,7 @@ from rich.table import Table
 from models import Collaborator
 from controllers import ClientHandler
 from config.database import SessionLocal
+from sentry_sdk import capture_exception
 
 
 console = Console()
@@ -55,6 +56,7 @@ def add_client(token):
         handler.create_client(data)
         console.print("[green]Client added successfully.[/green]")
     except Exception as e:
+        capture_exception(e)
         console.print(f"[red]{e}[/red]")
 
 def update_client(token):
@@ -76,6 +78,7 @@ def update_client(token):
         handler.update_client(client_id, data)
         console.print("[green]Client updated successfully.[/green]")
     except Exception as e:
+        capture_exception(e)
         console.print(f"[red]{e}[/red]")
 
 
@@ -103,5 +106,6 @@ def show_clients(token):
         
         console.print(table)
     except Exception as e:
+        capture_exception(e)
         console.print(f"[red]{e}[/red]")
     

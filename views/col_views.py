@@ -4,7 +4,7 @@ from rich.table import Table
 from models import Collaborator
 from controllers import CollaboratorHandler
 from config.database import SessionLocal
-
+from sentry_sdk import capture_exception
 
 console = Console()
 
@@ -29,6 +29,7 @@ def add_collaborator(token):
         handler.create_collaborator(data)
         console.print("[green]Collaborator added successfully.[/green]")
     except Exception as e:
+        capture_exception(e)
         console.print(f"[red]{e}[/red]")
 
 
@@ -51,6 +52,7 @@ def update_collaborator(token):
         handler.update_collaborator(collaborator_id, data)
         console.print("[green]Collaborator added successfully.[/green]")
     except Exception as e:
+        capture_exception(e)
         console.print(f"[red]{e}[/red]")    
 
 
@@ -69,6 +71,7 @@ def show_collaborators(token):
             
         console.print(table)
     except Exception as e:
+        capture_exception(e)
         console.print(f"[red]{e}[/red]")
 
 def delete_collaborator(token):
@@ -79,5 +82,6 @@ def delete_collaborator(token):
     if status_code == 200:
         console.print(f"[green]{response['message']}[/green]")
     else:
+        capture_exception(e)
         console.print(f"[red]{response['error']}[/red]")
     

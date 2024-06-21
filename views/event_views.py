@@ -5,6 +5,7 @@ from models import Collaborator, Client
 from controllers import EventHandler
 from config.database import SessionLocal
 from datetime import datetime
+from sentry_sdk import capture_exception
 
 
 console = Console()
@@ -33,6 +34,7 @@ def add_event(token):
         handler.create_event(data)
         console.print("[green]Event added successfully.[/green]")
     except Exception as e:
+        capture_exception(e)
         console.print(f"[red]{e}[/red]")
 
 def update_event(token):
@@ -55,6 +57,7 @@ def update_event(token):
         handler.update_event(event_id, data)
         console.print("[green]Event updated successfully.[/green]")
     except Exception as e:
+        capture_exception(e)
         console.print(f"[red]{e}[/red]")
 
 def show_events(token):
@@ -83,6 +86,7 @@ def show_events(token):
         console.print(table)
 
     except Exception as e:
+        capture_exception(e)
         console.print(f"[red]{e}[/red]")
 
 
@@ -112,6 +116,7 @@ def filter_events_ws(token):
         console.print(table)
 
     except Exception as e:
+        capture_exception(e)
         console.print(f"[red]{e}[/red]")
 
 def filter_my_events(token):
@@ -140,6 +145,7 @@ def filter_my_events(token):
         console.print(table)
 
     except Exception as e:
+        capture_exception(e)
         console.print(f"[red]{e}[/red]")
 
 
@@ -152,4 +158,5 @@ def add_support_contact(token):
         handler.add_support_contact(event_id, support_contact_id)
         console.print("Support contact designated successfully.")
     except Exception as e:
+        capture_exception(e)
         console.print(f"[red]{e}[/red]")

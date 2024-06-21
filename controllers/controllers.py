@@ -1,5 +1,6 @@
 from models import Client, Contract, Event, Collaborator, ValidationError
 from datetime import datetime
+from sentry_sdk import capture_exception
 
 
 class BaseHandler:
@@ -27,8 +28,11 @@ class ClientHandler(BaseHandler):
 
     def get_all_clients(self): 
         self.token_is_valid()
-        print(self.session.query(Client).all())
-        return self.session.query(Client).all()
+        try:
+            return self.session.query(Client).all()
+        except Exception as e:
+            capture_exception(e)
+            raise
     
     def create_client(self, data):
         self.check_permission('commercial')
@@ -43,8 +47,12 @@ class ClientHandler(BaseHandler):
             commercial_id=commercial_id
         )
 
-        client.save(self.session)
-        return client
+        try:
+            client.save(self.session)
+            return client
+        except Exception as e:
+            capture_exception(e)
+            raise
 
     def update_client(self, client_id, data):
         self.check_permission('commercial')
@@ -63,19 +71,31 @@ class ClientHandler(BaseHandler):
         client.company_name = data.get('company_name', client.company_name)
         client.last_update = datetime.utcnow()
 
-        client.save(self.session)  
-        return client
+        try:
+            client.save(self.session)  
+            return client
+        except Exception as e:
+            capture_exception(e)
+            raise
 
 
 class ContractHandler(BaseHandler):
 
     def get_all_contracts(self):
         self.token_is_valid()
-        return self.session.query(Contract).all()
+        try:
+            return self.session.query(Contract).all()
+        except Exception as e:
+            capture_exception(e)
+            raise
     
     def filter_contacts_not_paid(self):
         self.check_permission("commercial")
-        return self.session.query(Contract).filter_by(status=False)
+        try:
+            return self.session.query(Contract).filter_by(status=False)
+        except Exception as e:
+            capture_exception(e)
+            raise
     
     def create_contract(self, data):
         self.check_permission('gestion')
@@ -90,8 +110,12 @@ class ContractHandler(BaseHandler):
             status=data.get('status')
         )
         
-        contract.save(self.session)
-        return contract
+        try:
+            contract.save(self.session)
+            return contract
+        except Exception as e:
+            capture_exception(e)
+            raise
 
     def update_contract(self, contract_id, data):
         
@@ -110,24 +134,40 @@ class ContractHandler(BaseHandler):
         contract.amount_due = data.get('amount_due', contract.amount_due)
         contract.status = data.get('status', contract.status)
 
-        contract.save(self.session)
-        return contract
+        try:
+            contract.save(self.session)
+            return contract
+        except Exception as e:
+            capture_exception(e)
+            raise
 
 
 class EventHandler(BaseHandler):
 
     def get_all_events(self):
         self.token_is_valid()
-        return self.session.query(Event).all()
+        try:
+            return self.session.query(Event).all()
+        except Exception as e:
+            capture_exception(e)
+            raise
     
     def filter_events_without_support(self):
         self.check_permission('gestion')
-        return self.session.query(Event).filter_by(support_contact_id=None)
-    
+        try:
+            return self.session.query(Event).filter_by(support_contact_id=None)
+        except Exception as e:
+            capture_exception(e)
+            raise
+
     def filter_my_events(self):
         self.check_permission('support')
-        return self.session.query(Event).filter_by(support_contact_id=self.collaborator.id)
-    
+        try:
+            return self.session.query(Event).filter_by(support_contact_id=self.collaborator.id)
+        except Exception as e:
+            capture_exception(e)
+            raise
+
     def create_event(self, data):
         self.check_permission('commercial')
  
@@ -145,9 +185,13 @@ class EventHandler(BaseHandler):
             notes=data.get('notes')
         )
 
-        event.save(self.session)
-        return event
-    
+        try:
+            event.save(self.session)
+            return event
+        except Exception as e:
+            capture_exception(e)
+            raise
+
     def add_support_contact(self, event_id, support_contact_id):
         self.check_permission('gestion')
 
@@ -181,15 +225,23 @@ class EventHandler(BaseHandler):
         event.attendees = data.get('attendees', event.attendees)
         event.notes = data.get('notes', event.notes)
 
-        event.save(self.session)
-        return event
+        try:
+            event.save(self.session)
+            return event
+        except Exception as e:
+            capture_exception(e)
+            raise
 
 
 class CollaboratorHandler(BaseHandler):
 
     def get_all_collaborators(self):
         self.token_is_valid
-        return self.session.query(Collaborator).all()
+        try:
+            return self.session.query(Collaborator).all()
+        except Exception as e:
+            capture_exception(e)
+            raise
     
     def create_collaborator(self, data):
         self.check_permission('gestion')
@@ -217,9 +269,13 @@ class CollaboratorHandler(BaseHandler):
         collaborator.department = data.get('department', collaborator.department)
         collaborator.set_password(data.get('password', collaborator.password))
 
-        collaborator.save(self.session)
-        return collaborator
-    
+        try:
+            collaborator.save(self.session)
+            return collaborator
+        except Exception as e:
+            capture_exception(e)
+            raise
+
     def delete_collaborator(self, collaborator_id):
         self.check_permission('gestion')
         

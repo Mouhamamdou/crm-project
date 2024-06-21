@@ -4,6 +4,7 @@ from rich.table import Table
 from models import Collaborator, Client
 from controllers import ContractHandler
 from config.database import SessionLocal
+from sentry_sdk import capture_exception
 
 
 console = Console()
@@ -29,6 +30,7 @@ def add_contract(token):
         handler.create_contract(data)
         console.print("[green]Contract added successfully.[/green]")
     except Exception as e:
+        capture_exception(e)
         console.print(f"[red]{e}[/red]")
 
 def update_contract(token):
@@ -48,6 +50,7 @@ def update_contract(token):
         handler.update_contract(contract_id, data)
         console.print("[green]Contract updated successfully.[/green]")
     except Exception as e:
+        capture_exception(e)
         console.print(f"[red]{e}[/red]")
         
 def show_contracts(token):
@@ -75,6 +78,7 @@ def show_contracts(token):
             
         console.print(table)
     except Exception as e:
+        capture_exception(e)
         console.print(f"[red]{e}[/red]")
 
 def filter_contracts(token):
@@ -102,4 +106,5 @@ def filter_contracts(token):
             
         console.print(table)
     except Exception as e:
+        capture_exception(e)
         console.print(f"[red]{e}[/red]")

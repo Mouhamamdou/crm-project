@@ -5,7 +5,18 @@ from views import (login as login_view, register as register_view,
                    show_events, add_event, add_support_contact, update_event, filter_events_ws, filter_my_events,
                    show_collaborators, add_collaborator, update_collaborator, delete_collaborator)
 from config.database import init_db
+import sentry_sdk
 
+sentry_sdk.init(
+    dsn="https://6d33421778aa9658ef2b700b7467561c@o4507471152349184.ingest.de.sentry.io/4507471164473424",
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    traces_sample_rate=1.0,
+    # Set profiles_sample_rate to 1.0 to profile 100%
+    # of sampled transactions.
+    # We recommend adjusting this value in production.
+    profiles_sample_rate=1.0,
+)
 
 init_db()
 
