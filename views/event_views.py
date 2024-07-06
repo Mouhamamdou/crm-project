@@ -12,8 +12,15 @@ console = Console()
 
 session = SessionLocal()
 
-
+@click.command()
+@click.argument('token')
 def add_event(token):
+    """
+    Add a new event.
+
+    Args:
+        token (str): JWT token for authentication.
+    """
     contract_id = click.prompt("Contract ID", type=int)
     end_date_str = click.prompt("End Date (YYYY-MM-DD)")
     end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
@@ -38,6 +45,12 @@ def add_event(token):
         console.print(f"[red]{e}[/red]")
 
 def update_event(token):
+    """
+    Update an existing event.
+
+    Args:
+        token (str): JWT token for authentication.
+    """
     event_id = click.prompt("Event ID")
     end_date_str = click.prompt("End Date (YYYY-MM-DD)")
     end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
@@ -61,6 +74,12 @@ def update_event(token):
         console.print(f"[red]{e}[/red]")
 
 def show_events(token):
+    """
+    Display all events in a table.
+
+    Args:
+        token (str): JWT token for authentication.
+    """
     handler = EventHandler(session, token)
     try:
         events = handler.get_all_events()
@@ -91,6 +110,12 @@ def show_events(token):
 
 
 def filter_events_ws(token):
+    """
+    Display all events without support in a table.
+
+    Args:
+        token (str): JWT token for authentication.
+    """
     handler = EventHandler(session, token)
     try:
         events = handler.filter_events_without_support()
@@ -120,6 +145,12 @@ def filter_events_ws(token):
         console.print(f"[red]{e}[/red]")
 
 def filter_my_events(token):
+    """
+    Display all events assigned to the current collaborator in a table.
+
+    Args:
+        token (str): JWT token for authentication.
+    """
     handler = EventHandler(session, token)
     try:
         events = handler.filter_my_events()
@@ -150,6 +181,12 @@ def filter_my_events(token):
 
 
 def add_support_contact(token):
+    """
+    Add a support contact for an event.
+
+    Args:
+        token (str): JWT token for authentication.
+    """
     event_id = click.prompt("Event ID", type=int)
     support_contact_id = click.prompt("Support Contact ID", type=int)
 

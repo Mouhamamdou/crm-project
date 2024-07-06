@@ -4,12 +4,12 @@ from models import Base
 
 DATABASE_URL = "sqlite:///file.db"
 
-#Base = declarative_base()
-
 engine = create_engine(DATABASE_URL, echo=True)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def init_db():
-    from models import models
+    """
+    Initializes the database by creating all tables.
+    """
     Base.metadata.create_all(bind=engine)

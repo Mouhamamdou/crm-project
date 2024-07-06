@@ -23,24 +23,64 @@ init_db()
 
 @click.group()
 def cli():
+    """
+    Command-line interface for managing Epic Events application.
+
+    Includes commands for user registration, login, and managing clients,
+    contracts, events, and collaborators.
+    """
     pass
 
 @click.command(name='login')
 def login_command():
+    """
+    Command to initiate user login.
+    """
     login_view()
 
 @click.command(name='register')
 def register_command():
+    """
+    Command to register a new user.
+    """
     register_view()
 
 @click.command()
 def run():
+    """
+    Main command to run the Epic Events application.
+    """
     try:
         with open('token.txt', 'r') as f:
             token = f.read()
 
         while True:
-            command = click.prompt("Enter a command (add_client, update_client, add_contract, update_contract, add_event, add_support_contact, update_event, add_collaborator, update_collaborator, delete_collaborator, exit)", type=str)
+            commands = [
+                "add_client",
+                "update_client",
+                "view_clients",
+                "add_contract",
+                "update_contract",
+                "view_contracts",
+                "add_event",
+                "add_support_contact",
+                "filter_contracts",
+                "update_event",
+                "view_events",
+                "filter_events_ws",
+                "filter_my_events",
+                "add_collaborator",
+                "update_collaborator",
+                "delete_collaborator",
+                "view_collaborators",
+                "exit"
+            ]
+
+            command = click.prompt(
+                f"Enter a command ({', '.join(commands)})", 
+                type=str
+            )
+           
             if command == 'exit':
                 break
             elif command == 'view_clients':

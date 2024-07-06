@@ -12,6 +12,12 @@ session = SessionLocal()
 
 
 def add_collaborator(token):
+    """
+    Prompt user for collaborator details and create a new collaborator.
+
+    Args:
+        token (str): JWT token for authentication.
+    """
     name = click.prompt("Name")
     email = click.prompt("Email")
     department = click.prompt("Department(gestion/commercial/support)")
@@ -34,6 +40,12 @@ def add_collaborator(token):
 
 
 def update_collaborator(token):
+    """
+    Prompt user for collaborator ID and details, and update the collaborator.
+
+    Args:
+        token (str): JWT token for authentication.
+    """
     collaborator_id = click.prompt("Collaborator ID")
     name = click.prompt("Name")
     email = click.prompt("Email")
@@ -57,6 +69,12 @@ def update_collaborator(token):
 
 
 def show_collaborators(token):
+    """
+    Display all collaborators in a table.
+
+    Args:
+        token (str): JWT token for authentication.
+    """
     handler = CollaboratorHandler(session, token)
     try:
         collaborators = handler.get_all_collaborators()
@@ -75,6 +93,12 @@ def show_collaborators(token):
         console.print(f"[red]{e}[/red]")
 
 def delete_collaborator(token):
+    """
+    Delete a collaborator by ID.
+
+    Args:
+        token (str): JWT token for authentication.
+    """
     collaborator_id = click.prompt("Collaborator ID")
     handler = CollaboratorHandler(session, token)
     response, status_code = handler.delete_collaborator(collaborator_id)

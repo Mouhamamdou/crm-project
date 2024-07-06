@@ -12,7 +12,11 @@ console = Console()
 session = SessionLocal()
 
 
+@click.command()
 def login():
+    """
+    Authenticate a collaborator and return a JWT token.
+    """
     email = click.prompt("Email")
     password = click.prompt("Password", hide_input=True)
     collaborator = session.query(Collaborator).filter_by(email=email).first()
@@ -27,7 +31,11 @@ def login():
         return None
 
 
+@click.command()
 def register():
+    """
+    Register a new collaborator.
+    """
     name = click.prompt("Name")
     email = click.prompt("Email")
     password = click.prompt("Password", hide_input=True)
@@ -38,7 +46,15 @@ def register():
     console.print("[green]Registration successful![/green]")
 
 
+@click.command()
+@click.argument('token')
 def add_client(token):
+    """
+    Add a new client.
+
+    Args:
+        token (str): JWT token for authentication.
+    """
     name = click.prompt("Name")
     email = click.prompt("Email")
     telephone = click.prompt("Telephone")
@@ -59,7 +75,16 @@ def add_client(token):
         capture_exception(e)
         console.print(f"[red]{e}[/red]")
 
+
+@click.command()
+@click.argument('token')
 def update_client(token):
+    """
+    Update an existing client.
+
+    Args:
+        token (str): JWT token for authentication.
+    """
     client_id = click.prompt("Client ID")
     name = click.prompt("Name")
     email = click.prompt("Email")
@@ -82,7 +107,15 @@ def update_client(token):
         console.print(f"[red]{e}[/red]")
 
 
+@click.command()
+@click.argument('token')
 def show_clients(token):
+    """
+    Display all clients in a table.
+
+    Args:
+        token (str): JWT token for authentication.
+    """
     handler = ClientHandler(session, token)
     try:
         clients = handler.get_all_clients()

@@ -16,6 +16,15 @@ Base = declarative_base()
 
 
 class Client(Base):
+    """
+    Represents a client in the system.
+
+    Attributes:
+        id (int): The unique identifier for the client.
+        name (str): The name of the client.
+        email (str): The email address of the client.
+        telephone (str): The telephone number of the client.
+    """
     __tablename__ = 'clients'
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
@@ -30,6 +39,12 @@ class Client(Base):
     events = relationship('Event', back_populates='client')
 
     def validate(self):
+        """
+        Validates the client's information.
+        
+        Raises:
+            ValidationError: If any validation error occurs.
+        """
         errors = []
         
         if not self.name:
@@ -38,7 +53,7 @@ class Client(Base):
         if not self.email or not re.match(r"[^@]+@[^@]+\.[^@]+", self.email):
             errors.append("Valid email is required.")
         
-        if not self.telephone or not re.match(r"^\+?[1-9]\d{1,14}$", self.telephone):
+        if not self.telephone or not re.match(r"^\+?[0-9]\d{1,14}$", self.telephone):
             errors.append("Valid telephone number is required.")
         
         if not self.company_name:
@@ -51,6 +66,12 @@ class Client(Base):
             raise ValidationError(errors)
     
     def save(self, session):
+        """
+        Saves the client to the database.
+        
+        Args:
+            session (Session): The database session.
+        """
         self.validate()
         session.add(self)
         session.commit()
@@ -60,6 +81,10 @@ class Client(Base):
     
 
 class Contract(Base):
+    """
+    Represents a contract in the system.
+
+    """
     __tablename__ = 'contracts'
     id = Column(Integer, primary_key=True)
     client_id = Column(Integer, ForeignKey('clients.id'), nullable=False)
@@ -73,6 +98,12 @@ class Contract(Base):
     events = relationship('Event', back_populates='contract')
 
     def validate(self):
+        """
+        Validates the contract's information.
+        
+        Raises:
+            ValidationError: If any validation error occurs.
+        """
         errors = []
         
         if not isinstance(self.client_id, int):
@@ -94,12 +125,22 @@ class Contract(Base):
             raise ValidationError(errors)
     
     def save(self, session):
+        """
+        Saves the contract to the database.
+        
+        Args:
+            session (Session): The database session.
+        """
         self.validate()
         session.add(self)
         session.commit()
     
 
 class Event(Base):
+    """
+    Represents an event in the system.
+
+    """
     __tablename__ = 'events'
     id = Column(Integer, primary_key=True)
     contract_id = Column(Integer, ForeignKey('contracts.id'), nullable=False)
@@ -115,6 +156,12 @@ class Event(Base):
     contract = relationship('Contract', back_populates='events')
 
     def validate(self):
+        """
+        Validates the event's information.
+        
+        Raises:
+            ValidationError: If any validation error occurs.
+        """
         errors = []
 
         if not isinstance(self.contract_id, int):
@@ -141,6 +188,12 @@ class Event(Base):
             raise ValidationError(errors)
     
     def save(self, session):
+        """
+        Saves the event to the database.
+        
+        Args:
+            session (Session): The database session.
+        """
         self.validate()
         session.add(self)
         session.commit()
@@ -149,6 +202,10 @@ class Event(Base):
 SECRET_KEY = os.environ.get('SECRET_KEY', 'my_secret_key')
 
 class Collaborator(Base):
+    """
+    Represents a collaborator in the system.
+
+    """
     __tablename__= 'collaborators'
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
@@ -157,13 +214,34 @@ class Collaborator(Base):
     password = Column(String, nullable=False)
     
     def set_password(self, password):
+        """
+        Sets the password for the collaborator.
+        
+        Args:
+            password (str): The password to be hashed and set.
+        """
         salt = bcrypt.gensalt()
         self.password = bcrypt.hashpw(password.encode('utf-8'), salt)
 
     def check_password(self, password):
+        """
+        Checks if the provided password matches the stored password.
+        
+        Args:
+            password (str): The password to check.
+        
+        Returns:
+            bool: True if the password matches, False otherwise.
+        """
         return bcrypt.checkpw(password.encode('utf-8'), self.password)    
 
     def create_token(self):
+        """
+        Creates a JWT token for the collaborator.
+        
+        Returns:
+            str: The generated JWT token.
+        """
         token = jwt.encode({
             'id' : self.id,
             'exp' : datetime.utcnow() + timedelta(days=30),
@@ -172,6 +250,15 @@ class Collaborator(Base):
         return token
     
     def verify_token(self, token):
+        """
+        Verifies the provided JWT token.
+        
+        Args:
+            token (str): The JWT token to verify.
+        
+        Returns:
+            dict/str: The decoded token data if valid, 'expired' if expired, None if invalid.
+        """
         try:
             data = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
             return data
@@ -181,6 +268,19 @@ class Collaborator(Base):
             None
 
     def register(self, session, name, email, department, password):
+        """
+        Registers a new collaborator.
+        
+        Args:
+            session (Session): The database session.
+            name (str): The name of the collaborator.
+            email (str): The email of the collaborator.
+            department (str): The department of the collaborator.
+            password (str): The password for the collaborator.
+        
+        Returns:
+            Collaborator: The registered collaborator.
+        """
         self.name = name
         self.email = email
         self.department = department
@@ -190,6 +290,17 @@ class Collaborator(Base):
         return self
 
     def authenticate(self, session, email, password):
+        """
+        Authenticates a collaborator.
+        
+        Args:
+            session (Session): The database session.
+            email (str): The email of the collaborator.
+            password (str): The password of the collaborator.
+        
+        Returns:
+            str/None: The generated JWT token if authentication is successful, None otherwise.
+        """
         collaborator = session.query(Collaborator).filter_by(email=email).first()
         if collaborator and collaborator.check_password(password):
             return collaborator.create_token()
@@ -197,6 +308,12 @@ class Collaborator(Base):
             return None
         
     def validate(self):
+        """
+        Validates the collaborator's information.
+        
+        Raises:
+            ValidationError: If any validation error occurs.
+        """
         errors = []
         
         if not self.name:
@@ -215,6 +332,12 @@ class Collaborator(Base):
             raise ValidationError(errors)
     
     def save(self, session):
+        """
+        Saves the collaborator to the database.
+        
+        Args:
+            session (Session): The database session.
+        """
         self.validate()
         session.add(self)
         session.commit()

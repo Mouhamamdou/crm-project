@@ -11,8 +11,15 @@ console = Console()
 
 session = SessionLocal()
 
-
+@click.command()
+@click.argument('token')
 def add_contract(token):
+    """
+    Add a new contract.
+
+    Args:
+        token (str): JWT token for authentication.
+    """
     client_id = click.prompt("Client ID", type=int)
     total_amount = click.prompt("Total Amount", type=float)
     amount_due = click.prompt("Amount Due", type=float)
@@ -33,7 +40,15 @@ def add_contract(token):
         capture_exception(e)
         console.print(f"[red]{e}[/red]")
 
+@click.command()
+@click.argument('token')
 def update_contract(token):
+    """
+    Update an existing contract.
+
+    Args:
+        token (str): JWT token for authentication.
+    """
     contract_id = click.prompt("Contract ID")
     total_amount = click.prompt("Total Amount", type=float)
     amount_due = click.prompt("Amount Due", type=float)
@@ -52,8 +67,16 @@ def update_contract(token):
     except Exception as e:
         capture_exception(e)
         console.print(f"[red]{e}[/red]")
-        
+
+@click.command()
+@click.argument('token')        
 def show_contracts(token):
+    """
+    Display all contracts in a table.
+
+    Args:
+        token (str): JWT token for authentication.
+    """
     handler = ContractHandler(session, token)
     try:
         contracts = handler.get_all_contracts()
@@ -82,6 +105,12 @@ def show_contracts(token):
         console.print(f"[red]{e}[/red]")
 
 def filter_contracts(token):
+    """
+    Display all contracts not paid in a table.
+
+    Args:
+        token (str): JWT token for authentication.
+    """
     handler = ContractHandler(session, token)
     try:
         contracts = handler.filter_contacts_not_paid()

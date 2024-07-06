@@ -4,8 +4,17 @@ from sentry_sdk import capture_exception
 
 
 class BaseHandler:
-
+    """
+    Base handler class for managing session and token authentication.
+    """
     def __init__(self, session, token):
+        """
+        Initializes the BaseHandler with session and token.
+        
+        Args:
+            session: The database session.
+            token: The JWT token.
+        """
         self.session = session
         collab = Collaborator()
         self.token_data = collab.verify_token(token)
@@ -15,18 +24,41 @@ class BaseHandler:
             self.collaborator = None
 
     def token_is_valid(self):
+        """
+        Checks if the token is valid and not expired.
+        
+        Raises:
+            Exception: If the token is expired.
+        """
         if not self.token_data or self.token_data == 'expired':
             raise Exception('Token is expired. Please log in again.')
 
     def check_permission(self, department):
+        """
+        Checks if the collaborator has permission based on their department.
+        
+        Args:
+            department (str): The required department for permission.
+        
+        Raises:
+            Exception: If the collaborator does not have the required permission.
+        """
         self.token_is_valid()
         if not self.collaborator or self.collaborator.department != department:
             raise Exception('Permission denied')
 
 
 class ClientHandler(BaseHandler):
-
+    """
+    Handler class for managing clients.
+    """
     def get_all_clients(self): 
+        """
+        Retrieves all clients from the database.
+        
+        Returns:
+            List of all clients.
+        """
         self.token_is_valid()
         try:
             return self.session.query(Client).all()
@@ -35,6 +67,15 @@ class ClientHandler(BaseHandler):
             raise
     
     def create_client(self, data):
+        """
+        Creates a new client in the database.
+        
+        Args:
+            data (dict): The client data.
+        
+        Returns:
+            The created client instance.
+        """
         self.check_permission('commercial')
         
         commercial_id = self.collaborator.id
@@ -55,6 +96,16 @@ class ClientHandler(BaseHandler):
             raise
 
     def update_client(self, client_id, data):
+        """
+        Updates an existing client in the database.
+        
+        Args:
+            client_id (int): The ID of the client to update.
+            data (dict): The updated client data.
+        
+        Returns:
+            The updated client instance.
+        """
         self.check_permission('commercial')
 
         client = self.session.query(Client).filter_by(id=client_id).first()
@@ -80,8 +131,16 @@ class ClientHandler(BaseHandler):
 
 
 class ContractHandler(BaseHandler):
-
+    """
+    Handler class for managing contracts.
+    """
     def get_all_contracts(self):
+        """
+        Retrieves all contracts from the database.
+        
+        Returns:
+            List of all contracts.
+        """
         self.token_is_valid()
         try:
             return self.session.query(Contract).all()
@@ -90,6 +149,12 @@ class ContractHandler(BaseHandler):
             raise
     
     def filter_contacts_not_paid(self):
+        """
+        Retrieves all contracts that are not paid.
+        
+        Returns:
+            List of contracts not paid.
+        """
         self.check_permission("commercial")
         try:
             return self.session.query(Contract).filter_by(status=False)
@@ -98,6 +163,15 @@ class ContractHandler(BaseHandler):
             raise
     
     def create_contract(self, data):
+        """
+        Creates a new contract in the database.
+        
+        Args:
+            data (dict): The contract data.
+        
+        Returns:
+            The created contract instance.
+        """
         self.check_permission('gestion')
         
         client = self.session.query(Client).get(data.get('client_id'))
@@ -118,7 +192,16 @@ class ContractHandler(BaseHandler):
             raise
 
     def update_contract(self, contract_id, data):
+        """
+        Updates an existing contract in the database.
         
+        Args:
+            contract_id (int): The ID of the contract to update.
+            data (dict): The updated contract data.
+        
+        Returns:
+            The updated contract instance.
+        """        
         contract = self.session.query(Contract).filter_by(id=contract_id).first()
 
         self.token_is_valid()
@@ -143,8 +226,16 @@ class ContractHandler(BaseHandler):
 
 
 class EventHandler(BaseHandler):
-
+    """
+    Handler class for managing events.
+    """
     def get_all_events(self):
+        """
+        Retrieves all events from the database.
+        
+        Returns:
+            List of all events.
+        """
         self.token_is_valid()
         try:
             return self.session.query(Event).all()
@@ -153,6 +244,12 @@ class EventHandler(BaseHandler):
             raise
     
     def filter_events_without_support(self):
+        """
+        Retrieves all events without a support contact.
+        
+        Returns:
+            List of events without a support contact.
+        """
         self.check_permission('gestion')
         try:
             return self.session.query(Event).filter_by(support_contact_id=None)
@@ -161,6 +258,12 @@ class EventHandler(BaseHandler):
             raise
 
     def filter_my_events(self):
+        """
+        Retrieves all events assigned to the current collaborator.
+        
+        Returns:
+            List of events assigned to the current collaborator.
+        """
         self.check_permission('support')
         try:
             return self.session.query(Event).filter_by(support_contact_id=self.collaborator.id)
@@ -169,6 +272,15 @@ class EventHandler(BaseHandler):
             raise
 
     def create_event(self, data):
+        """
+        Creates a new event in the database.
+        
+        Args:
+            data (dict): The event data.
+        
+        Returns:
+            The created event instance.
+        """
         self.check_permission('commercial')
  
         contract = self.session.query(Contract).get(data.get('contract_id'))
@@ -193,6 +305,16 @@ class EventHandler(BaseHandler):
             raise
 
     def add_support_contact(self, event_id, support_contact_id):
+        """
+        Adds a support contact to an existing event.
+        
+        Args:
+            event_id (int): The ID of the event.
+            support_contact_id (int): The ID of the support contact to add.
+        
+        Returns:
+            The updated event instance.
+        """
         self.check_permission('gestion')
 
         event = self.session.query(Event).filter_by(id=event_id).first()
@@ -210,6 +332,16 @@ class EventHandler(BaseHandler):
         return event
 
     def update_event(self, event_id, data):
+        """
+        Updates an existing event in the database.
+        
+        Args:
+            event_id (int): The ID of the event to update.
+            data (dict): The updated event data.
+        
+        Returns:
+            The updated event instance.
+        """
         self.check_permission('support')
         
         event = self.session.query(Event).filter_by(id=event_id).first()
@@ -234,7 +366,9 @@ class EventHandler(BaseHandler):
 
 
 class CollaboratorHandler(BaseHandler):
-
+    """
+    Handler class for managing collaborators.
+    """    
     def get_all_collaborators(self):
         self.token_is_valid
         try:
@@ -244,6 +378,15 @@ class CollaboratorHandler(BaseHandler):
             raise
     
     def create_collaborator(self, data):
+        """
+        Creates a new collaborator in the database.
+        
+        Args:
+            data (dict): The collaborator data.
+        
+        Returns:
+            The created collaborator instance.
+        """
         self.check_permission('gestion')
         
         collaborator = Collaborator(
@@ -257,6 +400,16 @@ class CollaboratorHandler(BaseHandler):
         return collaborator
     
     def update_collaborator(self, collaborator_id, data):
+        """
+        Updates an existing collaborator in the database.
+        
+        Args:
+            collaborator_id (int): The ID of the collaborator to update.
+            data (dict): The updated collaborator data.
+        
+        Returns:
+            The updated collaborator instance.
+        """
         self.check_permission('gestion')
         
         collaborator = self.session.query(Collaborator).filter_by(id=collaborator_id).first()
@@ -277,6 +430,15 @@ class CollaboratorHandler(BaseHandler):
             raise
 
     def delete_collaborator(self, collaborator_id):
+        """
+        Deletes a collaborator from the database.
+        
+        Args:
+            collaborator_id (int): The ID of the collaborator to delete.
+        
+        Returns:
+            dict: A success message.
+        """
         self.check_permission('gestion')
         
         collaborator = self.session.query(Collaborator).filter_by(id=collaborator_id).first()
